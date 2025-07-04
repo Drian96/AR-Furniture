@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Mail, Lock, UserPlus } from 'lucide-react';
 import GoogleLogo from '../assets/google.jpg';
 import { twMerge } from 'tailwind-merge';
+import SignUpBG from '../assets/SignUpBG.jpg';
+import { Link } from 'react-router-dom';
 
 const SignUp: React.FC = () => {
   // State for input fields
@@ -37,9 +39,14 @@ const SignUp: React.FC = () => {
 
   return (
     // Main container for the sign-up page, centered on the screen
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4"
+        style={{ backgroundImage: `url(${SignUpBG})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+        >
+      <div className='absolute top-7 text-dgreen font-bold text-4xl font-serif w-full'>
+        <h1 className='text-center'>AR-Furniture</h1>
+      </div>
       {/* Sign-up Form Container: White background, rounded corners, shadow, responsive sizing */}
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto">
+      <div className="bg-white bg-opacity-10 rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto">
         {/* Page Header */}
         <h2 className="text-3xl font-bold text-dgreen mb-6 text-center">Create Your Account</h2>
 
@@ -136,9 +143,9 @@ const SignUp: React.FC = () => {
         <div className="text-center mt-6 text-gray-600">
           Already have an account?{' '}
           {/* This link should ideally navigate to your login modal or dedicated login page */}
-          <a href="/login" className="text-gray-900 hover:text-dgreen hover:underline font-medium transition-colors duration-200">
+          <Link to="/" className="text-gray-900 hover:text-dgreen hover:underline font-medium transition-colors duration-200">
             Log in
-          </a>
+          </Link>
         </div>
       </div>
     </div>

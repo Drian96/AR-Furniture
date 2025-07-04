@@ -61,10 +61,10 @@ const Footer = () => {
         
         <div className="border-t border-sage-medium pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-900 text-sm">
               © 2025 AR-Furniture. All rights reserved.
             </p>
-            <div className="flex space-x-6 mt-4 md:mt-0 text-sm text-gray-600">
+            <div className="flex space-x-6 mt-4 md:mt-0 text-sm text-gray-900">
               <a href="#" className="hover:text-sage-dark transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-sage-dark transition-colors">Terms of Service</a>
               <a href="#" className="hover:text-sage-dark transition-colors">Cookie Policy</a>
