@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+
+@theme {
+--color-dgreen: #0A400C;
+--color-lgreen: #708A58;
+--color-lgray: #B1AB86;
+--color-dgray: #4A4A4A;
+--color-cream: #FEFAE0;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+
