@@ -9,7 +9,7 @@ import About from "../components/Home/About";
 const Home = () => {
   return (
     <div className="min-h-screen">
-      {/* Header, Hero, Featured Products, Newsletter, Footer */}
+      {/* Header, Hero, Featured Products, About, Testimonials, Footer */}
       <Header />
       <Hero />
       <FeaturedProducts />

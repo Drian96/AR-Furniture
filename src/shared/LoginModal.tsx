@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import { Mail, Lock, LogIn } from 'lucide-react';
 import Google from '../assets/google.jpg'; 
 import { twMerge } from 'tailwind-merge';
 import { Link } from 'react-router-dom';

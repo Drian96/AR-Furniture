@@ -1,7 +1,8 @@
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
-    
+  
     <section id="home"
     className="relative  min-h-screen bg-cream flex items-center">
       
@@ -20,9 +21,9 @@ const Hero = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-lgreen text-lg px-8 py-4 hover:bg-dgreen transition-colors duration-300 rounded-lg cursor-pointer">
+              <Link to="/products" className="bg-lgreen text-lg px-8 py-4 rounded-lg hover:bg-dgreen transition-colors duration-300">
                 Shop Now!
-              </button>
+              </Link>
               <button className="bg-lgreen text-lg px-8 py-4 rounded-lg hover:bg-dgreen transition-colors duration-300 cursor-pointer">
                 Shop Collection
               </button>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react'; // Import useState to manage modal visibility
+import { useState } from 'react'; // Import useState to manage modal visibility
 import { CircleUserRound } from 'lucide-react';
-import LoginModal from '../../shared/LoginModal'; // Assuming LoginModal.tsx is in src/shared/
+import LoginModal from '../../shared/LoginModal'; 
 
 const Header = () => {
   // State to control the visibility of the login modal

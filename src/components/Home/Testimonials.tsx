@@ -42,7 +42,7 @@ const Testimonials = () => {
           {testimonials.map((testimonial, index) => (
             <div 
               key={testimonial.id}
-              className="bg-sage-light rounded-2xl p-8 animate-slide-up"
+              className="bg-cream shadow-lg rounded-2xl p-8 animate-slide-up"
               style={{ animationDelay: `${index * 0.2}s` }}
             >
               <div className="flex mb-4">
@@ -51,15 +51,15 @@ const Testimonials = () => {
                 ))}
               </div>
               
-              <p className="text-gray-700 mb-6 leading-relaxed">
+              <p className="text-gray-900 mb-6 leading-relaxed">
                 "{testimonial.text}"
               </p>
               
               <div>
-                <div className="font-semibold text-sage-dark">
+                <div className="font-semibold text-gray-900">
                   {testimonial.name}
                 </div>
-                <div className="text-gray-600 text-sm">
+                <div className="text-gray-900 text-sm">
                   {testimonial.location}
                 </div>
               </div>
