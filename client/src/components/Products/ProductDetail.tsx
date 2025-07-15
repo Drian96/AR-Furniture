@@ -139,19 +139,23 @@ const ProductDetail = () => {
                   +
                 </button>
               </div>
+                            <button
+                              onClick={handleAddToCart}
+                              className="bg-red-900 text-cream px-5 py-2.5 rounded-lg font-medium hover:bg-red-700 transition-all duration-300 text-lg cursor-pointer"
+                            > TRY NOW!</button>
             </div>
 
             {/* Action Buttons */}
             <div className="space-y-4">
               <button
                 onClick={handleAddToCart}
-                className="w-full bg-lgreen text-cream px-8 py-4 rounded-lg font-medium hover:bg-dgreen transition-all duration-300 text-lg"
+                className="w-full bg-dgreen text-cream px-8 py-4 rounded-lg font-medium hover:bg-lgreen transition-all duration-300 text-lg cursor-pointer"
               >
                 Add to Cart
               </button>
               <button
                 onClick={handleBuyNow}
-                className="w-full bg-dgreen text-cream px-8 py-4 rounded-lg font-medium hover:bg-opacity-90 transition-all duration-300 text-lg"
+                className="w-full bg-dgreen text-cream px-8 py-4 rounded-lg font-medium hover:bg-lgreen transition-all duration-300 text-lg cursor-pointer"
               >
                 Buy Now
               </button>

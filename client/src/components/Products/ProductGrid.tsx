@@ -1,6 +1,7 @@
 
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import sofa from '../../assets/sofa.jpg'
 
 interface Product {
   id: number;
@@ -30,7 +31,7 @@ const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
       id: 2,
       name: "Comfort Lounge Chair",
       price: 899,
-      image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+      image: sofa,
       category: "Seating",
       isNew: false
     },
