@@ -60,12 +60,14 @@ const Header = () => {
             
             {/* User Authentication */}
             {isLoggedIn ? (
-              <button 
+              
+              <Link to= "/profile"
                 onClick={handleLogin}
                 className="text-dgreen hover:text-lgreen transition-colors p-2 rounded-full border border-lgreen"
               >
                 <User className="w-5 h-5" />
-              </button>
+              </Link>
+              
             ) : (
               <button
                 onClick={handleLogin}

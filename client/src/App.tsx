@@ -4,7 +4,7 @@ import SignUp from './pages/SignUp';
 import NotFound from './pages/NotFound';
 import Products from './pages/Product';
 import ProductDetailPage from './pages/ProductDetails';
-import UserProfile from './pages/userProfile';
+import UserProfile from './pages/UserProfile';
 
 const App = () => {
   return (
