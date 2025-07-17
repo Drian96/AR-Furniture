@@ -5,6 +5,9 @@ import NotFound from './pages/NotFound';
 import Products from './pages/Product';
 import ProductDetailPage from './pages/ProductDetails';
 import UserProfile from './pages/UserProfile';
+import Admin from './pages/AdminDashboard';
+
+import AdminProfile from './pages/AdminProfile';
 
 const App = () => {
   return (
@@ -15,6 +18,8 @@ const App = () => {
       <Route path="/products" element={<Products />} />
       <Route path="/product/:id" element={<ProductDetailPage />} />
       <Route path="/profile" element={<UserProfile />} />
+      <Route path="/admin" element={<Admin />} />
+      <Route path="/AdminProfile" element={<AdminProfile />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
