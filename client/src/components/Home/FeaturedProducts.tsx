@@ -56,12 +56,12 @@ const FeaturedProducts = () => {
                   alt={product.name}
                   className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
-                <div className="absolute top-4 left-4">
-                  <span className="bg-sage-medium text-sage-dark px-3 py-1 rounded-full text-sm font-medium">
-                    {product.category}
-                  </span>
-                </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-opacity-20 transition-all duration-300"></div>
+                    <div className="absolute top-4 left-4">
+                    <span className="bg-sage-medium text-sage-dark px-3 py-1 rounded-full text-sm font-medium">
+                      {product.category}
+                    </span>
+                  </div>
               </div>
               
               <div className="mt-4">

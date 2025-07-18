@@ -6,6 +6,7 @@ import { Search, Plus, Edit, Trash2, X } from 'lucide-react';
 const AdminUserAccounts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -53,9 +54,17 @@ const AdminUserAccounts = () => {
   };
 
   // TODO: When backend is ready, implement edit functionality
-  const handleEditUser = (userId: string) => {
-    console.log('Edit user:', userId);
-    // TODO: Open edit modal with user data
+  const handleEditUser = (user: any) => {
+    setSelectedUser(user);
+    setShowEditUserModal(true);
+    // TODO: Pre-populate form with user data
+  };
+
+  const handleUpdateUser = (formData: any) => {
+    console.log('Updating user:', selectedUser?.id, formData);
+    // TODO: API call to update user (excluding password for security)
+    setShowEditUserModal(false);
+    setSelectedUser(null);
   };
 
   // TODO: When backend is ready, implement delete functionality
@@ -140,7 +149,7 @@ const AdminUserAccounts = () => {
                   <td className="py-3 px-4">
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => handleEditUser(user.id)}
+                        onClick={() => handleEditUser(user)}
                         className="text-blue-600 hover:text-blue-800"
                       >
                         <Edit className="w-4 h-4" />
@@ -160,83 +169,106 @@ const AdminUserAccounts = () => {
         </div>
       </div>
 
-      {/* Add New User Modal */}
-      {/* TODO: When backend is ready, implement actual form submission */}
-      {showAddUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-dgreen rounded-lg p-8 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-cream">Add New User</h2>
-              <button 
-                onClick={() => setShowAddUserModal(false)}
-                className="text-cream hover:text-opacity-70"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+    {/* Add New User Modal */}
+    {showAddUserModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-dgreen">Add New User</h2>
+            <button 
+              onClick={() => setShowAddUserModal(false)}
+              className="text-dgray hover:text-dgreen"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
-            <form onSubmit={handleAddUser} className="space-y-4">
+          <form onSubmit={handleAddUser} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Full Name *</label>
                 <input
                   type="text"
-                  placeholder="Name"
+                  placeholder="Enter full name"
                   required
-                  className="w-full px-4 py-3 bg-sage-medium text-dgreen rounded-lg placeholder-dgreen placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-cream"
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Email Address *</label>
                 <input
                   type="email"
-                  placeholder="Email Address"
+                  placeholder="Enter email"
                   required
-                  className="w-full px-4 py-3 bg-sage-medium text-dgreen rounded-lg placeholder-dgreen placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-cream"
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Contact Number *</label>
                 <input
                   type="tel"
-                  placeholder="Contact Number"
+                  placeholder="Enter contact number"
                   required
-                  className="w-full px-4 py-3 bg-sage-medium text-dgreen rounded-lg placeholder-dgreen placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-cream"
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 />
               </div>
               <div>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  required
-                  className="w-full px-4 py-3 bg-sage-medium text-dgreen rounded-lg placeholder-dgreen placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-cream"
-                />
-              </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  required
-                  className="w-full px-4 py-3 bg-sage-medium text-dgreen rounded-lg placeholder-dgreen placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-cream"
-                />
-              </div>
-              <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Position *</label>
                 <select 
                   required
-                  className="w-full px-4 py-3 bg-sage-medium text-dgreen rounded-lg focus:outline-none focus:ring-2 focus:ring-cream"
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 >
-                  <option value="">Position</option>
-                  <option value="admin">Admin</option>
-                  <option value="client">Client</option>
+                  <option value="">Select position</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Staff">Staff</option>
                 </select>
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Password *</label>
+                <input
+                  type="password"
+                  placeholder="Enter password"
+                  required
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Confirm Password *</label>
+                <input
+                  type="password"
+                  placeholder="Confirm password"
+                  required
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowAddUserModal(false)}
+                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
-                className="w-full bg-sage-medium text-dgreen py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors mt-6"
+                className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
               >
                 Add New User
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
-      )}
+      </div>
+    )}
 
       {/* Success Modal */}
       {showSuccessModal && (
@@ -283,6 +315,105 @@ const AdminUserAccounts = () => {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {/* TODO: When backend is ready, implement actual form submission with pre-populated data */}
+      {showEditUserModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-dgreen">Edit User Account</h2>
+              <button 
+                onClick={() => setShowEditUserModal(false)}
+                className="text-dgray hover:text-dgreen"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateUser({});
+              }} 
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Name *</label>
+                  <input
+                    type="text"
+                    defaultValue={selectedUser.name}
+                    placeholder="Enter full name"
+                    required
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Email *</label>
+                  <input
+                    type="email"
+                    defaultValue={selectedUser.email}
+                    placeholder="Email address"
+                    required
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Position *</label>
+                  <select 
+                    defaultValue={selectedUser.role}
+                    required
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  >
+                    <option value="">Select position</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Staff">Staff</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Status *</label>
+                  <select 
+                    defaultValue={selectedUser.status}
+                    required
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="bg-sage-medium rounded-lg p-4 mt-2">
+                <p className="text-sm text-dgreen font-medium mb-1">Security Note:</p>
+                <p className="text-xs text-dgreen opacity-80">
+                  Password cannot be edited here for security reasons. User must reset their own password.
+                </p>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditUserModal(false)}
+                  className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                >
+                  Update User
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

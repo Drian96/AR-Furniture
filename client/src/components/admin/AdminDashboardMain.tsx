@@ -1,4 +1,5 @@
 import { TrendingUp, Users, Package, DollarSign } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
 // Main dashboard overview component for admin
 // TODO: When backend is connected, fetch real analytics data from your Express API
@@ -23,6 +24,16 @@ const AdminDashboardMain = () => {
     { name: "Premium Toolkit", price: "₱2,500", sales: 145 },
     { name: "Garden Equipment Set", price: "₱1,850", sales: 98 },
     { name: "Safety Goggles", price: "₱850", sales: 76 }
+  ];
+
+  // TODO: Fetch sales chart data from backend API
+  const salesData = [
+    { month: 'July', sales: 250 },
+    { month: 'August', sales: 400 },
+    { month: 'September', sales: 600 },
+    { month: 'October', sales: 300 },
+    { month: 'November', sales: 550 },
+    { month: 'December', sales: 900 }
   ];
 
   return (
@@ -82,6 +93,37 @@ const AdminDashboardMain = () => {
               <TrendingUp className="w-6 h-6 text-dgreen" />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Sales Overview Chart */}
+      {/* TODO: When backend is ready, fetch real sales data for the chart */}
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-sage-light">
+        <h3 className="text-lg font-semibold text-dgreen mb-6">Sales Overview</h3>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={salesData}>
+              <XAxis 
+                dataKey="month" 
+                axisLine={false}
+                tickLine={false}
+                className="text-dgray"
+              />
+              <YAxis 
+                axisLine={false}
+                tickLine={false}
+                className="text-dgray"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="sales" 
+                stroke="#4A7C59" 
+                strokeWidth={3}
+                dot={{ fill: '#4A7C59', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: '#4A7C59', strokeWidth: 2, fill: '#fff' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

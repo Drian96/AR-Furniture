@@ -5,6 +5,9 @@ import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
 // TODO: When backend is connected, fetch real inventory data from your Express API
 const AdminViewStocks = () => {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [showEditItemModal, setShowEditItemModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
@@ -55,14 +58,29 @@ const AdminViewStocks = () => {
   };
 
   // TODO: When backend is ready, implement edit/delete functionality
-  const handleEditItem = (itemId: string) => {
-    console.log('Edit item:', itemId);
-    // TODO: Open edit modal with item data
+  const handleEditItem = (item: any) => {
+    setSelectedItem(item);
+    setShowEditItemModal(true);
+    // TODO: Pre-populate form with item data
   };
 
-  const handleDeleteItem = (itemId: string) => {
-    console.log('Delete item:', itemId);
-    // TODO: Show confirmation dialog then API call to delete
+  const handleDeleteItem = (item: any) => {
+    setSelectedItem(item);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    console.log('Deleting item:', selectedItem?.id);
+    // TODO: API call to delete item
+    setShowDeleteConfirm(false);
+    setSelectedItem(null);
+  };
+
+  const handleUpdateItem = (formData: any) => {
+    console.log('Updating item:', selectedItem?.id, formData);
+    // TODO: API call to update item
+    setShowEditItemModal(false);
+    setSelectedItem(null);
   };
 
   return (
@@ -173,13 +191,13 @@ const AdminViewStocks = () => {
                   <td className="py-3 px-4">
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => handleEditItem(item.id)}
+                        onClick={() => handleEditItem(item)}
                         className="text-blue-600 hover:text-blue-800"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDeleteItem(item.id)}
+                        onClick={() => handleDeleteItem(item)}
                         className="text-red-600 hover:text-red-800"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -307,6 +325,155 @@ const AdminViewStocks = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Item Modal */}
+      {/* TODO: When backend is ready, implement actual form submission with pre-populated data */}
+      {showEditItemModal && selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-dgreen">Edit Stock Item</h2>
+              <button 
+                onClick={() => setShowEditItemModal(false)}
+                className="text-dgray hover:text-dgreen"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Product Name *</label>
+                  <input
+                    type="text"
+                    defaultValue={selectedItem.name}
+                    placeholder="Enter product name"
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Product Code</label>
+                  <input
+                    type="text"
+                    defaultValue={selectedItem.id}
+                    placeholder="Product code"
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Category *</label>
+                  <select 
+                    defaultValue={selectedItem.category}
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  >
+                    <option>Select category</option>
+                    <option>Power Tools</option>
+                    <option>Hand Tools</option>
+                    <option>Safety Equipment</option>
+                    <option>Hardware</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Supplier *</label>
+                  <input
+                    type="text"
+                    defaultValue={selectedItem.supplier}
+                    placeholder="Enter supplier name"
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Price (₱) *</label>
+                  <input
+                    type="number"
+                    defaultValue={selectedItem.price?.replace('₱', '').replace(',', '')}
+                    placeholder="0.00"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Quantity *</label>
+                  <input
+                    type="number"
+                    defaultValue={selectedItem.quantity}
+                    placeholder="0"
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Product description..."
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                ></textarea>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditItemModal(false)}
+                  className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleUpdateItem({});
+                  }}
+                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                >
+                  Update Item
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-dgreen mb-2">Delete Item</h3>
+              <p className="text-dgray">
+                Are you sure you want to delete <span className="font-medium">{selectedItem.name}</span>? 
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

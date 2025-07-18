@@ -6,6 +6,8 @@ import { Search, Eye, Edit, Trash2, X } from 'lucide-react';
 const AdminCustomer = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
+  const [showEditCustomer, setShowEditCustomer] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
   // TODO: Replace with actual customer data from backend API
@@ -53,14 +55,29 @@ const AdminCustomer = () => {
   };
 
   // TODO: When backend is ready, implement edit/delete functionality
-  const handleEditCustomer = (customerId: string) => {
-    console.log('Edit customer:', customerId);
-    // TODO: Open edit modal with customer data
+  const handleEditCustomer = (customer: any) => {
+    setSelectedCustomer(customer);
+    setShowEditCustomer(true);
+    // TODO: Pre-populate form with customer data
   };
 
-  const handleDeleteCustomer = (customerId: string) => {
-    console.log('Delete customer:', customerId);
-    // TODO: Show confirmation dialog then API call to delete
+  const handleDeleteCustomer = (customer: any) => {
+    setSelectedCustomer(customer);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    console.log('Deleting customer:', selectedCustomer?.id);
+    // TODO: API call to delete customer
+    setShowDeleteConfirm(false);
+    setSelectedCustomer(null);
+  };
+
+  const handleUpdateCustomer = (formData: any) => {
+    console.log('Updating customer:', selectedCustomer?.id, formData);
+    // TODO: API call to update customer (excluding password)
+    setShowEditCustomer(false);
+    setSelectedCustomer(null);
   };
 
   return (
@@ -131,13 +148,13 @@ const AdminCustomer = () => {
                         <Eye className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleEditCustomer(customer.id)}
+                        onClick={() => handleEditCustomer(customer)}
                         className="text-green-600 hover:text-green-800"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDeleteCustomer(customer.id)}
+                        onClick={() => handleDeleteCustomer(customer)}
                         className="text-red-600 hover:text-red-800"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -191,6 +208,138 @@ const AdminCustomer = () => {
                   <p className="text-xs text-dgray mt-1">TODO: Implement order history API</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Customer Modal */}
+      {/* TODO: When backend is ready, implement actual form submission with pre-populated data */}
+      {showEditCustomer && selectedCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-dgreen">Edit Customer Information</h2>
+              <button 
+                onClick={() => setShowEditCustomer(false)}
+                className="text-dgray hover:text-dgreen"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    defaultValue={selectedCustomer.name}
+                    placeholder="Enter full name"
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    defaultValue={selectedCustomer.email}
+                    placeholder="Enter email"
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    defaultValue={selectedCustomer.phone}
+                    placeholder="Enter phone number"
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Status</label>
+                  <select 
+                    defaultValue={selectedCustomer.status}
+                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Address</label>
+                <textarea
+                  rows={3}
+                  defaultValue={selectedCustomer.address}
+                  placeholder="Enter address"
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                ></textarea>
+              </div>
+
+              <div className="bg-cream rounded-lg p-4">
+                <p className="text-sm text-dgray font-medium mb-1">Security Note:</p>
+                <p className="text-xs text-dgray">
+                  Password cannot be edited here for security reasons. Customer must reset their own password.
+                </p>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditCustomer(false)}
+                  className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleUpdateCustomer({});
+                  }}
+                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                >
+                  Update Customer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-dgreen mb-2">Delete Customer</h3>
+              <p className="text-dgray">
+                Are you sure you want to delete <span className="font-medium">{selectedCustomer.name}</span>? 
+                This action cannot be undone and will remove all customer data and order history.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

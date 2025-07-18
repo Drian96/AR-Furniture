@@ -78,7 +78,7 @@ const AdminSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) =>
               onClick={() => setActiveSection(item.id)}
               className={`
                 w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left 
-                transition-all duration-200 ease-in-out
+                transition-all duration-200 ease-in-out cursor-pointer
                 ${isActive 
                   ? 'bg-dgreen text-cream shadow-md' // Active state: dark green background with cream text
                   : 'text-dgreen hover:bg-sage-medium hover:shadow-sm' // Inactive state: hover effects

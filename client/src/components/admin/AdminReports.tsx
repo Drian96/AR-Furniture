@@ -23,10 +23,10 @@ const AdminReports = () => {
 
   // TODO: Fetch category distribution from backend analytics
   const categoryData = [
-    { category: "Power Tools", percentage: 35 },
-    { category: "Hand Tools", percentage: 28 },
-    { category: "Safety Equipment", percentage: 18 },
-    { category: "Hardware", percentage: 19 }
+    { category: "Seating", percentage: 35 },
+    { category: "Storage", percentage: 28 },
+    { category: "Tables", percentage: 18 },
+    { category: "Beds", percentage: 19 }
   ];
 
   return (
