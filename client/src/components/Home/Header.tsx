@@ -16,6 +16,8 @@ const Header = () => {
     setIsLoginModalOpen(false);
   };
 
+
+
   return (
     <header className="bg-lgray shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,9 +48,9 @@ const Header = () => {
           {/* User Icon (to open login modal) */}
           <div className="flex items-center space-x-4">
             <button
-              onClick={handleOpenLoginModal} // Attach the onClick handler here
+              onClick={handleOpenLoginModal}
               className="text-primary hover:text-dgreen cursor-pointer p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-dgreen"
-              aria-label="Open login or user profile"
+              aria-label="Open login modal"
             >
               <CircleUserRound className="w-7.5 h-7.5" />
             </button>

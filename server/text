@@ -1,0 +1,106 @@
+POST   /api/v1/auth/register      - Create new account
+POST   /api/v1/auth/login         - Login user
+GET    /api/v1/auth/profile       - Get user profile
+PUT    /api/v1/auth/profile       - Update profile
+POST   /api/v1/auth/change-password - Change password
+POST   /api/v1/auth/logout        - Logout user
+GET    /api/v1/auth/verify        - Verify token
+GET    /api/v1/auth/health        - Health check
+GET    /health                    - Server health
+GET    /                          - API info
+
+
+
+
+
+
+
+
+Users TableCREATE
+TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  phone VARCHAR(20),
+  date_of_birth DATE,
+  gender VARCHAR(10) CHECK (gender IN ('male', 'female', 'other')),
+  role VARCHAR(20) NOT NULL DEFAULT 'customer' CHECK (role IN ('admin', 'manager', 'staff', 'customer')),
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  email_notifications BOOLEAN DEFAULT true,
+  sms_notifications BOOLEAN DEFAULT false,
+  last_login TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+==========================================
+DATABASE QUERIES (Users Table)
+==========================================
+-- Check if user exists by email
+SELECT * FROM users WHERE email = 'user@example.com' LIMIT 1;
+
+-- Find user by email (case-insensitive)
+SELECT * FROM users WHERE LOWER(email) = LOWER('user@example.com');
+
+-- Create new user
+INSERT INTO users (email, password_hash, first_name, last_name, phone, role, status, created_at, updated_at) 
+VALUES ('user@example.com', '$2b$10$hashedpassword', 'John', 'Doe', '+1234567890', 'customer', 'active', NOW(), NOW());
+
+-- Update user's last login
+UPDATE users SET last_login = NOW() WHERE id = 1;
+
+-- Get all users (ordered by ID)
+SELECT * FROM users ORDER BY id;
+
+-- Get user by ID
+SELECT * FROM users WHERE id = 1;
+
+-- Check if user account is active
+SELECT * FROM users WHERE id = 1 AND status = 'active';
+
+-- Update user profile
+UPDATE users SET 
+  first_name = 'New Name',
+  last_name = 'New Last',
+  phone = '+1234567890',
+  updated_at = NOW()
+WHERE id = 1;
+
+-- Change user password
+UPDATE users SET 
+  password_hash = '$2b$10$newhashedpassword',
+  updated_at = NOW()
+WHERE id = 1;
+
+-- Delete user (soft delete - set status to inactive)
+UPDATE users SET status = 'inactive', updated_at = NOW() WHERE id = 1;
+
+-- Get users by role
+SELECT * FROM users WHERE role = 'admin';
+
+-- Get active users only
+SELECT * FROM users WHERE status = 'active';
+
+-- Count total users
+SELECT COUNT(*) as total_users FROM users;
+
+-- Count users by role
+SELECT role, COUNT(*) as count FROM users GROUP BY role;
+
+

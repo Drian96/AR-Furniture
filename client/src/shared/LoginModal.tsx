@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 import Google from '../assets/google.jpg'; 
 import { twMerge } from 'tailwind-merge';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // Define the props for the LoginModal component
 interface LoginModalProps {
@@ -14,32 +15,80 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   // State for email and password input fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate(); // Hook for navigation
+
+
+
+  // Toggle password visibility
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(!showPassword);
+  }, [showPassword]);
+
+  // Handle login button click
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+    
+    // Prevent multiple submissions
+    if (loading) return;
+    
+    setLoading(true);
+    setError('');
+
+    try {
+      await login({ email, password });
+      
+      // Only close modal and redirect on successful login
+      onClose();
+      navigate('/products');
+    } catch (err: any) {
+      // Handle specific error messages
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (err.message) {
+        if (err.message.includes('Invalid email or password') || err.message.includes('401')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (err.message.includes('Failed to fetch') || err.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (err.message.includes('User not found')) {
+          errorMessage = 'Email not found. Please check your email address.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [email, password, loading, login, onClose, navigate]);
+
+  // Handle Google login button click
+  const handleGoogleLogin = useCallback(() => {
+    console.log('Attempting to sign in via Google');
+    // In a real application, this would trigger a Google OAuth flow
+    onClose();
+  }, [onClose]);
 
   // If the modal is not open, don't render anything
   if (!isOpen) return null;
 
-  // Handle login button click
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent default form submission
-    console.log('Attempting to log in with:', { email, password });
-    // In a real application, you would send this data to your authentication API
-    // and handle success/failure, then close the modal on success.
-    // For now, we'll just close it for demonstration.
-    onClose();
-  };
 
-  // Handle Google login button click
-  const handleGoogleLogin = () => {
-    console.log('Attempting to sign in via Google');
-    // In a real application, this would trigger a Google OAuth flow
-    onClose();
-  };
 
   return (
-    // Modal Overlay: Fixed position to cover the entire screen, now with bg-opacity-0
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+    // Modal Overlay: Fixed position to cover the entire screen
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50"
+      onClick={onClose} // Close modal when clicking overlay
+    >
       {/* Modal Content Container: White background, rounded corners, shadow, responsive sizing */}
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto transform transition-all duration-300 ease-out scale-100 opacity-100">
+      <div 
+        className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto transform transition-all duration-300 ease-out scale-100 opacity-100"
+        onClick={(e) => e.stopPropagation()} // Prevent modal from closing when clicking inside
+      >
         {/* Close Button: Absolute position, top right corner, rounded, subtle hover effect */}
         <button
           onClick={onClose}
@@ -55,7 +104,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         <h2 className="text-3xl font-bold text-dgreen mb-6 text-center">Login Now!</h2>
 
         {/* Login Form */}
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} noValidate>
           {/* Email Input Field */}
           <div className="mb-4">
             <label htmlFor="email" className="block text-gray-700 text-sm font-medium mb-2">
@@ -69,7 +118,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dgreen focus:border-transparent transition duration-200"
                 placeholder="example@gmail.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(''); // Clear error when user starts typing
+                }}
                 required
               />
             </div>
@@ -83,25 +135,57 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 id="password"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dgreen focus:border-transparent transition duration-200"
+                className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dgreen focus:border-transparent transition duration-200"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError(''); // Clear error when user starts typing
+                }}
                 required
               />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-red-800">
+                    {error}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full bg-lgreen hover:bg-dgreen text-white font-semibold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-opacity-75 flex items-center justify-center cursor-pointer"
+            disabled={loading}
+            className="w-full bg-lgreen hover:bg-dgreen text-white font-semibold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-opacity-75 flex items-center justify-center cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             <LogIn className="mr-2" size={20} />
-            Log In
+            {loading ? 'Logging In...' : 'Log In'}
           </button>
+
+
         </form>
 
         {/* Forgot Password Link */}

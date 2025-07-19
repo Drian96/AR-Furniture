@@ -1,5 +1,30 @@
 
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import LoginModal from '../../shared/LoginModal';
+
 const FeaturedProducts = () => {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
+
+  const handleOpenLoginModal = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const handleCloseLoginModal = () => {
+    setIsLoginModalOpen(false);
+  };
+
+  const handleProductClick = (productId: number) => {
+    if (isAuthenticated) {
+      // If logged in, navigate to product detail
+      window.location.href = `/product/${productId}`;
+    } else {
+      // If not logged in, show login modal
+      handleOpenLoginModal();
+    }
+  };
   const products = [
     {
       id: 1,
@@ -49,6 +74,7 @@ const FeaturedProducts = () => {
               key={product.id} 
               className="group cursor-pointer animate-slide-up"
               style={{ animationDelay: `${index * 0.1}s` }}
+              onClick={() => handleProductClick(product.id)}
             >
               <div className="relative overflow-hidden rounded-2xl shadow-lg">
                 <img 
@@ -77,10 +103,16 @@ const FeaturedProducts = () => {
         </div>
         
         <div className="text-center mt-12 mb-10">
-          <button className="bg-lgreen text-lg px-10 py-4 hover:bg-dgreen transition-colors duration-300 rounded-lg cursor-pointer">
+          <Link to="/products" className="bg-lgreen text-lg px-10 py-4 hover:bg-dgreen transition-colors duration-300 rounded-lg cursor-pointer inline-block">
             View All Products
-          </button>
+          </Link>
         </div>
+
+        {/* Login Modal */}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={handleCloseLoginModal}
+        />
       </div>
     </section>
   );
