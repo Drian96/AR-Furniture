@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useSignup } from './SignUpContext';
+import { sendVerificationCode } from '../../../services/api';
 import type { ApiResponse } from '../../../types/auth';
 
 const EmailEntry: React.FC = () => {
@@ -14,21 +15,17 @@ const EmailEntry: React.FC = () => {
     setError('');
 
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // For now, simulate success
-      console.log('Sending verification to:', emailInput);
-      
-      // Simulate API response
-      const data: ApiResponse = { success: true };
+      // Call backend to send verification code
+      const data: ApiResponse = await sendVerificationCode(emailInput);
 
       if (data.success) {
         setEmail(emailInput);
-        setCurrentStep(2);
+        setCurrentStep(2); // Move to code entry step
       } else {
-        setError(data.error || 'Failed to send verification code');
+        setError(data.error || data.message || 'Failed to send verification code');
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -37,7 +34,6 @@ const EmailEntry: React.FC = () => {
   return (
     <div className="w-full max-w-md mx-4 p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center text-dgreen">Sign Up</h2>
-      
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className="block text-dgray text-sm font-bold mb-2">
@@ -52,11 +48,9 @@ const EmailEntry: React.FC = () => {
             required
           />
         </div>
-
         {error && (
           <div className="mb-4 text-red-600 text-sm">{error}</div>
         )}
-
         <button
           type="submit"
           disabled={loading}

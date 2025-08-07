@@ -65,12 +65,13 @@ const Header = () => {
                   >
                     Profile
                   </a>
-                  <a
-                    href="/settings" // Replace with your actual routes
+                  {/* Use Link for client-side routing to system settings */}
+                  <Link
+                    to="/admin/system-settings"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Settings
-                  </a>
+                  </Link>
                   <button
                     onClick={() => console.log('Logging out...')} // Replace with your logout logic
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

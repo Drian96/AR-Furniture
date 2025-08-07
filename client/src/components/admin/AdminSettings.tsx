@@ -1,4 +1,5 @@
 // Admin settings component
+// Removed AdminSystemSettings import and section
 const AdminSettings = () => {
   return (
     <div>

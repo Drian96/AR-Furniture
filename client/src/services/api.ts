@@ -298,6 +298,18 @@ export const verifyToken = async (): Promise<User> => {
   throw new Error('Invalid or expired token');
 };
 
+/**
+ * Send a verification code to the user's email
+ * @param email - The email address to send the code to
+ * @returns Promise with API response
+ */
+export const sendVerificationCode = async (email: string): Promise<ApiResponse> => {
+  return await apiRequest<ApiResponse>('/auth/send-verification-code', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+};
+
 // ============================================================================
 // HEALTH CHECK
 // Function to check if API is running

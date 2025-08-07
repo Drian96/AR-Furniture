@@ -9,7 +9,8 @@ const {
   getProfile,
   updateProfile,
   changePassword,
-  logout
+  logout,
+  sendVerificationCode
 } = require('../controllers/authController');
 
 // Import authentication middleware
@@ -263,6 +264,26 @@ router.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+/**
+ * POST /api/v1/auth/send-verification-code
+ * Send a verification code to the user's email address
+ * 
+ * Request Body:
+ * {
+ *   email: "example@gmail.com"
+ * }
+ * 
+ * Response:
+ * {
+ *   success: true,
+ *   message: "Verification code sent successfully"
+ * }
+ * 
+ * Middleware:
+ * - requireCustomer: Ensures only customers can access this route
+ */
+router.post('/send-verification-code', sendVerificationCode);
 
 // Export the router
 module.exports = router;

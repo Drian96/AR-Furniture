@@ -1,20 +1,7 @@
-import { useState } from 'react'; // Import useState to manage modal visibility
 import { CircleUserRound } from 'lucide-react';
-import LoginModal from '../../shared/LoginModal'; 
+import { Link } from 'react-router-dom'; 
 
 const Header = () => {
-  // State to control the visibility of the login modal
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-
-  // Function to open the login modal
-  const handleOpenLoginModal = () => {
-    setIsLoginModalOpen(true);
-  };
-
-  // Function to close the login modal
-  const handleCloseLoginModal = () => {
-    setIsLoginModalOpen(false);
-  };
 
 
 
@@ -45,25 +32,20 @@ const Header = () => {
             </a>
           </nav>
 
-          {/* User Icon (to open login modal) */}
+          {/* User Icon (to navigate to login page) */}
           <div className="flex items-center space-x-4">
-            <button
-              onClick={handleOpenLoginModal}
+            <Link
+              to="/login"
               className="text-primary hover:text-dgreen cursor-pointer p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-dgreen"
-              aria-label="Open login modal"
+              aria-label="Go to login page"
             >
               <CircleUserRound className="w-7.5 h-7.5" />
-            </button>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Login Modal Component */}
-      {/* It will only render when isLoginModalOpen is true */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={handleCloseLoginModal}
-      />
+
     </header>
   );
 };

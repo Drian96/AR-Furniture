@@ -1,28 +1,17 @@
 
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import LoginModal from '../../shared/LoginModal';
 
 const FeaturedProducts = () => {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { isAuthenticated } = useAuth();
-
-  const handleOpenLoginModal = () => {
-    setIsLoginModalOpen(true);
-  };
-
-  const handleCloseLoginModal = () => {
-    setIsLoginModalOpen(false);
-  };
 
   const handleProductClick = (productId: number) => {
     if (isAuthenticated) {
       // If logged in, navigate to product detail
       window.location.href = `/product/${productId}`;
     } else {
-      // If not logged in, show login modal
-      handleOpenLoginModal();
+      // If not logged in, redirect to login page
+      window.location.href = '/login';
     }
   };
   const products = [
@@ -108,11 +97,7 @@ const FeaturedProducts = () => {
           </Link>
         </div>
 
-        {/* Login Modal */}
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={handleCloseLoginModal}
-        />
+
       </div>
     </section>
   );

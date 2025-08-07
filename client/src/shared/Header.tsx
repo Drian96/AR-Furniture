@@ -3,12 +3,10 @@ import { Search, ShoppingCart, User, LogOut, LogOut as LogOutIcon } from 'lucide
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import LoginModal from './LoginModal';
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [cartCount, setCartCount] = useState(0); // Mock cart count
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
 
@@ -16,14 +14,6 @@ const Header = () => {
     e.preventDefault();
     console.log('Searching for:', searchQuery);
     // TODO: Implement search functionality
-  };
-
-  const handleOpenLoginModal = () => {
-    setIsLoginModalOpen(true);
-  };
-
-  const handleCloseLoginModal = () => {
-    setIsLoginModalOpen(false);
   };
 
   const handleLogoutClick = () => {
@@ -99,22 +89,18 @@ const Header = () => {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={handleOpenLoginModal}
+              <Link
+                to="/login"
                 className="text-dgreen hover:text-lgreen transition-colors font-medium"
               >
                 Sign-Up | Login
-              </button>
+              </Link>
             )}
           </div>
         </div>
       </div>
 
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={handleCloseLoginModal}
-      />
+
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (

@@ -3,6 +3,9 @@ const User = require('../models/User'); // Our User model
 const { hashPassword, comparePassword, validatePasswordStrength } = require('../utils/passwordUtils'); // Password utilities
 const { generateToken, verifyToken } = require('../utils/jwt'); // JWT utilities
 const { getValidationErrors } = require('../utils/validation'); // Validation utilities
+const { sendVerificationEmail } = require('../utils/email');
+const { sequelize } = require('../config/database');
+const { QueryTypes } = require('sequelize');
 
 // ============================================================================
 // AUTHENTICATION CONTROLLERS
@@ -446,6 +449,34 @@ const logout = async (req, res) => {
   }
 };
 
+const sendVerificationCode = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required.' });
+
+  // Generate a 6-digit code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Set expiration (e.g., 10 minutes from now)
+  const expires_at = new Date(Date.now() + 10 * 60 * 1000);
+
+  // Remove old codes for this email
+  await sequelize.query(
+    'DELETE FROM verification_codes WHERE email = :email',
+    { replacements: { email }, type: QueryTypes.DELETE }
+  );
+
+  // Insert new code
+  await sequelize.query(
+    `INSERT INTO verification_codes (email, code, expires_at) VALUES (:email, :code, :expires_at)`,
+    { replacements: { email, code, expires_at }, type: QueryTypes.INSERT }
+  );
+
+  // Send email
+  await sendVerificationEmail(email, code);
+
+  return res.json({ message: 'Verification code sent.' });
+};
+
 // Export all controller functions
 module.exports = {
   register,      // User registration
@@ -453,5 +484,6 @@ module.exports = {
   getProfile,    // Get user profile
   updateProfile, // Update user profile
   changePassword, // Change password
-  logout         // User logout
+  logout,         // User logout
+  sendVerificationCode
 };
