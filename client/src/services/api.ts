@@ -310,6 +310,19 @@ export const sendVerificationCode = async (email: string): Promise<ApiResponse> 
   });
 };
 
+/**
+ * Verify a code sent to the user's email
+ * @param email - The email address
+ * @param code - The verification code
+ * @returns Promise with API response
+ */
+export const verifyCode = async (email: string, code: string): Promise<ApiResponse> => {
+  return await apiRequest<ApiResponse>('/auth/verify-code', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+  });
+};
+
 // ============================================================================
 // HEALTH CHECK
 // Function to check if API is running
@@ -343,6 +356,8 @@ export default {
   updateProfile,
   changePassword,
   verifyToken,
+  sendVerificationCode,
+  verifyCode,
   
   // Token management
   getToken,

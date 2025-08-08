@@ -450,31 +450,98 @@ const logout = async (req, res) => {
 };
 
 const sendVerificationCode = async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email is required.' });
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email is required.' 
+      });
+    }
 
-  // Generate a 6-digit code
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate a 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-  // Set expiration (e.g., 10 minutes from now)
-  const expires_at = new Date(Date.now() + 10 * 60 * 1000);
+    // Set expiration (e.g., 10 minutes from now)
+    const expires_at = new Date(Date.now() + 10 * 60 * 1000);
 
-  // Remove old codes for this email
-  await sequelize.query(
-    'DELETE FROM verification_codes WHERE email = :email',
-    { replacements: { email }, type: QueryTypes.DELETE }
-  );
+    // Remove old codes for this email
+    await sequelize.query(
+      'DELETE FROM verification_codes WHERE email = :email',
+      { replacements: { email }, type: QueryTypes.DELETE }
+    );
 
-  // Insert new code
-  await sequelize.query(
-    `INSERT INTO verification_codes (email, code, expires_at) VALUES (:email, :code, :expires_at)`,
-    { replacements: { email, code, expires_at }, type: QueryTypes.INSERT }
-  );
+    // Insert new code
+    await sequelize.query(
+      `INSERT INTO verification_codes (email, code, expires_at) VALUES (:email, :code, :expires_at)`,
+      { replacements: { email, code, expires_at }, type: QueryTypes.INSERT }
+    );
 
-  // Send email
-  await sendVerificationEmail(email, code);
+    // Send email
+    await sendVerificationEmail(email, code);
 
-  return res.json({ message: 'Verification code sent.' });
+    console.log('✅ Verification code sent successfully to:', email);
+    return res.json({ 
+      success: true, 
+      message: 'Verification code sent successfully.' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error sending verification code:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to send verification code.' 
+    });
+  }
+};
+
+const verifyCode = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email and code are required.' 
+      });
+    }
+
+    // Check if code exists and is not expired
+    const result = await sequelize.query(
+      `SELECT * FROM verification_codes 
+       WHERE email = :email AND code = :code AND expires_at > NOW()`,
+      { 
+        replacements: { email, code }, 
+        type: QueryTypes.SELECT 
+      }
+    );
+
+    if (result.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid or expired verification code.' 
+      });
+    }
+
+    // Code is valid, remove it from database
+    await sequelize.query(
+      'DELETE FROM verification_codes WHERE email = :email',
+      { replacements: { email }, type: QueryTypes.DELETE }
+    );
+
+    console.log('✅ Verification code verified successfully for:', email);
+    return res.json({ 
+      success: true, 
+      message: 'Email verified successfully.' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error verifying code:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to verify code.' 
+    });
+  }
 };
 
 // Export all controller functions
@@ -485,5 +552,6 @@ module.exports = {
   updateProfile, // Update user profile
   changePassword, // Change password
   logout,         // User logout
-  sendVerificationCode
+  sendVerificationCode, // Send verification code
+  verifyCode     // Verify verification code
 };

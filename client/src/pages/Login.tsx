@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 import Google from '../assets/google.jpg'; 
+import SignUpBG from '../assets/SignUpBG.jpg';
 import { twMerge } from 'tailwind-merge';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,12 +12,18 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const togglePasswordVisibility = useCallback(() => {
     setShowPassword(!showPassword);
   }, [showPassword]);
+
+  const handleSuccessOk = useCallback(() => {
+    setShowSuccessModal(false);
+    navigate('/products');
+  }, [navigate]);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +32,8 @@ const Login: React.FC = () => {
     setError('');
     try {
       await login({ email, password });
-      navigate('/products');
+      setShowSuccessModal(true);
+      // Don't auto-redirect - wait for user to click OK button
     } catch (err: any) {
       let errorMessage = 'Login failed. Please try again.';
       if (err.message) {
@@ -51,7 +59,11 @@ const Login: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4"
+         style={{ backgroundImage: `url(${SignUpBG})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+      <div className='absolute top-7 text-dgreen font-bold text-4xl font-serif w-full'>
+        <h1 className='text-center'>AR-Furniture</h1>
+      </div>
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto">
         <h2 className="text-3xl font-bold text-dgreen mb-6 text-center">Login Now!</h2>
         <form onSubmit={handleLogin} noValidate>
@@ -159,6 +171,29 @@ const Login: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-dgreen mb-2">Welcome Back!</h3>
+              <p className="text-dgray mb-6">Login successful! Ready to continue shopping?</p>
+              <button
+                onClick={handleSuccessOk}
+                className="w-full bg-dgreen text-white py-3 px-6 rounded-md hover:bg-lgreen transition-colors font-semibold cursor-pointer"
+              >
+                OK, Let's Go!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
