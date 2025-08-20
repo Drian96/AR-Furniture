@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
@@ -20,10 +21,23 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/products" element={<Products />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/profile" element={<UserProfile />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/AdminProfile" element={<AdminProfile />} />
-        <Route path="/admin/system-settings" element={<AdminSystemSettingsPage />} />
+
+        {/* Customer protected routes */}
+        <Route element={<ProtectedRoute allowedRoles={["customer", "admin", "manager", "staff"]} />}> 
+          <Route path="/profile" element={<UserProfile />} />
+        </Route>
+
+        {/* Admin area: allow admin, manager, staff */}
+        <Route element={<ProtectedRoute allowedRoles={["admin", "manager", "staff"]} />}> 
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/AdminProfile" element={<AdminProfile />} />
+        </Route>
+
+        {/* System settings: admin only */}
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}> 
+          <Route path="/admin/system-settings" element={<AdminSystemSettingsPage />} />
+        </Route>
+
         <Route path="/logout" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

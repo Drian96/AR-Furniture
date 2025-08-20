@@ -1,10 +1,13 @@
-import { Bell, User, ChevronDown } from 'lucide-react'; // Import ChevronDown for a potential indicator
-import { useState, useRef, useEffect } from 'react'; // Import useState, useRef, useEffect
+import { Bell, User, ChevronDown, LogOut as LogOutIcon } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext';
 
 const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const { user, logout } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Close the menu if a click occurs outside of it
   useEffect(() => {
@@ -23,13 +26,17 @@ const Header = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
   };
 
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
+    <>
     <header className="bg-cream shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
           <div className="flex items-center">
-
             <Link to="/admin" className="text-2xl font-serif font-bold text-dgreen hover:text-lgreen transition-colors">
               AR-Furniture
             </Link>
@@ -59,21 +66,23 @@ const Header = () => {
 
               {isUserMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                  <a
-                    href="/AdminProfile" // Replace with your actual routes
+                  <Link
+                    to="/AdminProfile"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Profile
-                  </a>
-                  {/* Use Link for client-side routing to system settings */}
-                  <Link
-                    to="/admin/system-settings"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Settings
                   </Link>
+                  {/* Settings visible only for admin */}
+                  {user?.role === 'admin' && (
+                    <Link
+                      to="/admin/system-settings"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Settings
+                    </Link>
+                  )}
                   <button
-                    onClick={() => console.log('Logging out...')} // Replace with your logout logic
+                    onClick={() => setShowLogoutConfirm(true)}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Log out
@@ -85,6 +94,34 @@ const Header = () => {
         </div>
       </div>
     </header>
+    {showLogoutConfirm && (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
+          <div className="mb-6">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOutIcon className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-dgreen mb-2">Logout</h3>
+            <p className="text-dgray">Are you sure you want to logout? You will be redirected to the landing page.</p>
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setShowLogoutConfirm(false)}
+              className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

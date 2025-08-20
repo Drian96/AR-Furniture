@@ -73,6 +73,40 @@ export interface ApiResponse<T = any> {
   errors?: string[];
 }
 
+// =========================
+// Admin User management types
+// =========================
+export interface AdminListUsersResponse {
+  users: Array<{
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    role: 'admin' | 'manager' | 'staff' | 'customer';
+    status: 'active' | 'inactive';
+    lastLogin?: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+}
+
+export interface AdminCreateUserRequest {
+  fullName: string;
+  email: string;
+  contact?: string;
+  role: 'admin' | 'manager' | 'staff';
+  password: string;
+}
+
+export interface AdminUpdateUserRequest {
+  fullName?: string;
+  email?: string;
+  contact?: string;
+  role?: 'admin' | 'manager' | 'staff';
+  status?: 'active' | 'inactive';
+}
+
 // Auth response interface
 export interface AuthResponse {
   user: User;
@@ -213,10 +247,10 @@ export const login = async (credentials: LoginRequest): Promise<AuthResponse> =>
  * @returns Promise with user profile data
  */
 export const getProfile = async (): Promise<User> => {
-  const response = await apiRequest<User>('/auth/profile');
+  const response = await apiRequest<{ user: User }>('/auth/profile');
   
-  if (response.success && response.data) {
-    return response.data;
+  if (response.success && response.data && (response.data as any).user) {
+    return (response.data as any).user;
   }
 
   throw new Error(response.message || 'Failed to get profile');
@@ -228,13 +262,13 @@ export const getProfile = async (): Promise<User> => {
  * @returns Promise with updated user data
  */
 export const updateProfile = async (profileData: ProfileUpdateRequest): Promise<User> => {
-  const response = await apiRequest<User>('/auth/profile', {
+  const response = await apiRequest<{ user: User }>('/auth/profile', {
     method: 'PUT',
     body: JSON.stringify(profileData),
   });
 
-  if (response.success && response.data) {
-    return response.data;
+  if (response.success && response.data && (response.data as any).user) {
+    return (response.data as any).user;
   }
 
   throw new Error(response.message || 'Failed to update profile');
@@ -287,10 +321,10 @@ export const logout = async (): Promise<string> => {
  * @returns Promise with user data if token is valid
  */
 export const verifyToken = async (): Promise<User> => {
-  const response = await apiRequest<User>('/auth/verify');
+  const response = await apiRequest<{ user: User }>('/auth/verify');
   
-  if (response.success && response.data) {
-    return response.data;
+  if (response.success && response.data && (response.data as any).user) {
+    return (response.data as any).user;
   }
 
   // If token is invalid, remove it
@@ -368,3 +402,36 @@ export default {
   // Health check
   checkApiHealth,
 }; 
+
+// =========================
+// Admin Users API
+// =========================
+export const adminListUsers = async (): Promise<AdminListUsersResponse> => {
+  const response = await apiRequest<AdminListUsersResponse>('/users');
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to list users');
+};
+
+export const adminCreateUser = async (payload: AdminCreateUserRequest) => {
+  const response = await apiRequest<{ user: any }>('/users', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to create user');
+};
+
+export const adminUpdateUser = async (id: number, payload: AdminUpdateUserRequest) => {
+  const response = await apiRequest<{ user: any }>(`/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to update user');
+};
+
+export const adminDeleteUser = async (id: number) => {
+  const response = await apiRequest(`/users/${id}`, { method: 'DELETE' });
+  if (response.success) return true;
+  throw new Error(response.message || 'Failed to delete user');
+};

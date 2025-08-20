@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import AdminSidebar from '../components/admin/AdminProfileSidebar';
 import AdminProfileInformation from '../components/admin/AdminProfileInformation';
 import AdminSecurity from '../components/admin/AdminSecurity';
@@ -9,8 +11,17 @@ import Footer from '../shared/Footer';
 // Admin profile page component - similar to user profile but with admin features
 // TODO: When backend is connected, add authentication check for admin role
 const AdminProfile = () => {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading } = useAuth();
   // State management for active section
   const [activeSection, setActiveSection] = useState('profile');
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated || !user || !['admin', 'manager', 'staff'].includes(user.role)) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, user, navigate]);
 
   // Function to render the appropriate content based on active section
   // TODO: When backend is connected, each section will fetch admin-specific data

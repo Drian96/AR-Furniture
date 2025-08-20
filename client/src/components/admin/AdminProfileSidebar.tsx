@@ -14,11 +14,13 @@ interface AdminSidebarProps {
 
 const AdminProfileSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) => {
   // Admin navigation items configuration tailored for AdminProfile sections
+  const role = sessionStorage.getItem('lastLoginRole');
+  const isAdmin = role === 'admin';
   const sidebarItems = [
     { id: 'profile', label: 'Profile Information', icon: User },
-    // Removed 'purchases' and 'addresses' as requested
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    // Settings only for admin
+    ...(isAdmin ? [{ id: 'settings', label: 'Settings', icon: Settings }] : []),
   ];
 
   // TODO: When backend is connected, fetch admin data from your Express API

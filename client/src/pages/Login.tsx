@@ -22,7 +22,17 @@ const Login: React.FC = () => {
 
   const handleSuccessOk = useCallback(() => {
     setShowSuccessModal(false);
-    navigate('/products');
+    // After successful login, redirect based on role
+    const stored = localStorage.getItem('authToken');
+    // Fallback: route to products for customers, admin to /admin
+    // Since token may not be easily decoded here, rely on server-verified user in context by re-login return
+    // We'll set a flag in session to indicate lastLoginRole via a custom event
+    const role = sessionStorage.getItem('lastLoginRole');
+    if (role === 'admin' || role === 'manager' || role === 'staff') {
+      navigate('/admin');
+    } else {
+      navigate('/products');
+    }
   }, [navigate]);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
@@ -31,7 +41,12 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      await login({ email, password });
+      const user = await login({ email, password });
+      sessionStorage.setItem('lastLoginRole', user.role);
+      if (user.role === 'admin' || user.role === 'manager' || user.role === 'staff') {
+        navigate('/admin');
+        return;
+      }
       setShowSuccessModal(true);
       // Don't auto-redirect - wait for user to click OK button
     } catch (err: any) {

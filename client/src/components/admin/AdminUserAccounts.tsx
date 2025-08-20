@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Search, Plus, Edit, Trash2, X } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Search, Plus, Edit, Trash2, X, Eye, EyeOff } from 'lucide-react';
+import { adminListUsers, adminCreateUser, adminDeleteUser, adminUpdateUser } from '../../services/api';
 
 // User accounts management component for admin
 // TODO: When backend is connected, fetch real user accounts data from your Express API
@@ -11,39 +12,71 @@ const AdminUserAccounts = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  // TODO: Replace with actual user accounts data from backend API
-  const userAccounts = [
-    {
-      id: "USR001",
-      name: "John Smith", 
-      email: "john@example.com",
-      role: "Admin",
-      lastLogin: "2024-01-15 10:30",
-      status: "Active"
-    },
-    {
-      id: "USR002",
-      name: "Sarah Wilson",
-      email: "sarah@example.com", 
-      role: "Manager",
-      lastLogin: "2024-01-14 09:15",
-      status: "Active"
-    },
-    {
-      id: "USR003",
-      name: "Mike Johnson",
-      email: "mike@example.com",
-      role: "Staff", 
-      lastLogin: "2024-01-13 14:45",
-      status: "Inactive"
-    }
-  ];
+  // Add-user form state
+  const [newUser, setNewUser] = useState({
+    fullName: '',
+    email: '',
+    contact: '',
+    role: '', // 'admin' | 'manager' | 'staff'
+    password: '',
+    confirmPassword: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [userAccounts, setUserAccounts] = useState<Array<any>>([]);
+
+  // Fetch users
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await adminListUsers();
+        const filtered = data.users.filter(u => u.role !== 'customer');
+        const mapped = filtered.map(u => ({
+          id: u.id,
+          name: `${u.firstName} ${u.lastName}`,
+          email: u.email,
+          role: (u.role || '').charAt(0).toUpperCase() + (u.role || '').slice(1),
+          lastLogin: u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '-',
+          status: (u.status || '').charAt(0).toUpperCase() + (u.status || '').slice(1),
+        }));
+        setUserAccounts(mapped);
+      } catch (e) {
+        console.error('Failed to load users', e);
+      }
+    };
+    load();
+  }, []);
 
   // TODO: When backend is ready, implement actual user creation
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: API call to create new user account
-    console.log('Creating new user account');
+    // Client-side validation guard
+    if (!isFormValid) return;
+    // API call to create new user account
+    adminCreateUser({
+      fullName: newUser.fullName,
+      email: newUser.email,
+      contact: newUser.contact,
+      role: newUser.role as 'admin' | 'manager' | 'staff',
+      password: newUser.password,
+    })
+      .then(async () => {
+        const data = await adminListUsers();
+        const filtered = data.users.filter(u => u.role !== 'customer');
+        const mapped = filtered.map(u => ({
+          id: u.id,
+          name: `${u.firstName} ${u.lastName}`,
+          email: u.email,
+          role: (u.role || '').charAt(0).toUpperCase() + (u.role || '').slice(1),
+          lastLogin: u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '-',
+          status: (u.status || '').charAt(0).toUpperCase() + (u.status || '').slice(1),
+        }));
+        setUserAccounts(mapped);
+      })
+      .catch((e) => {
+        console.error('Create user failed', e);
+      });
     setShowAddUserModal(false);
     setShowSuccessModal(true);
     
@@ -60,11 +93,26 @@ const AdminUserAccounts = () => {
     // TODO: Pre-populate form with user data
   };
 
-  const handleUpdateUser = (formData: any) => {
-    console.log('Updating user:', selectedUser?.id, formData);
-    // TODO: API call to update user (excluding password for security)
-    setShowEditUserModal(false);
-    setSelectedUser(null);
+  const handleUpdateUser = async (formData: any) => {
+    if (!selectedUser) return;
+    try {
+      await adminUpdateUser(Number(selectedUser.id), formData);
+      setShowEditUserModal(false);
+      setSelectedUser(null);
+      const data = await adminListUsers();
+      const filtered = data.users.filter(u => u.role !== 'customer');
+      const mapped = filtered.map(u => ({
+        id: u.id,
+        name: `${u.firstName} ${u.lastName}`,
+        email: u.email,
+        role: (u.role || '').charAt(0).toUpperCase() + (u.role || '').slice(1),
+        lastLogin: u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '-',
+        status: (u.status || '').charAt(0).toUpperCase() + (u.status || '').slice(1),
+      }));
+      setUserAccounts(mapped);
+    } catch (e) {
+      console.error('Update user failed', e);
+    }
   };
 
   // TODO: When backend is ready, implement delete functionality
@@ -73,12 +121,33 @@ const AdminUserAccounts = () => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    console.log('Deleting user:', selectedUser?.id);
-    // TODO: API call to delete user account
-    setShowDeleteConfirm(false);
-    setSelectedUser(null);
+  const confirmDelete = async () => {
+    try {
+      await adminDeleteUser(Number(selectedUser?.id));
+      setShowDeleteConfirm(false);
+      setSelectedUser(null);
+      const data = await adminListUsers();
+      const filtered = data.users.filter(u => u.role !== 'customer');
+      const mapped = filtered.map(u => ({
+        id: u.id,
+        name: `${u.firstName} ${u.lastName}`,
+        email: u.email,
+        role: (u.role || '').charAt(0).toUpperCase() + (u.role || '').slice(1),
+        lastLogin: u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '-',
+        status: (u.status || '').charAt(0).toUpperCase() + (u.status || '').slice(1),
+      }));
+      setUserAccounts(mapped);
+    } catch (e) {
+      console.error('Delete user failed', e);
+    }
   };
+
+  // Derived validation state
+  const emailValid = useMemo(() => /.+@.+\..+/.test(newUser.email), [newUser.email]);
+  const passwordTooShort = useMemo(() => newUser.password.length > 0 && newUser.password.length < 8, [newUser.password]);
+  const passwordsMismatch = useMemo(() => newUser.confirmPassword.length > 0 && newUser.password !== newUser.confirmPassword, [newUser.password, newUser.confirmPassword]);
+  const requiredMissing = useMemo(() => !newUser.fullName || !newUser.email || !newUser.contact || !newUser.role || !newUser.password || !newUser.confirmPassword, [newUser]);
+  const isFormValid = useMemo(() => !requiredMissing && emailValid && !passwordTooShort && !passwordsMismatch, [requiredMissing, emailValid, passwordTooShort, passwordsMismatch]);
 
   return (
     <div className="space-y-6">
@@ -191,6 +260,8 @@ const AdminUserAccounts = () => {
                   type="text"
                   placeholder="Enter full name"
                   required
+                  value={newUser.fullName}
+                  onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
                   className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 />
               </div>
@@ -200,7 +271,9 @@ const AdminUserAccounts = () => {
                   type="email"
                   placeholder="Enter email"
                   required
-                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${emailValid || newUser.email.length === 0 ? 'border-sage-light focus:ring-dgreen' : 'border-red-300 focus:ring-red-500'}`}
                 />
               </div>
             </div>
@@ -212,6 +285,8 @@ const AdminUserAccounts = () => {
                   type="tel"
                   placeholder="Enter contact number"
                   required
+                  value={newUser.contact}
+                  onChange={(e) => setNewUser({ ...newUser, contact: e.target.value })}
                   className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 />
               </div>
@@ -219,12 +294,14 @@ const AdminUserAccounts = () => {
                 <label className="block text-sm font-medium text-dgreen mb-1">Position *</label>
                 <select 
                   required
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: (e.target.value || '').toLowerCase() })}
                   className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 >
                   <option value="">Select position</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Manager">Manager</option>
-                  <option value="Staff">Staff</option>
+                  <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
+                  <option value="staff">Staff</option>
                 </select>
               </div>
             </div>
@@ -232,21 +309,51 @@ const AdminUserAccounts = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-dgreen mb-1">Password *</label>
-                <input
-                  type="password"
-                  placeholder="Enter password"
-                  required
-                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter password"
+                    required
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    className={`w-full pr-12 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${passwordTooShort ? 'border-red-300 focus:ring-red-500' : 'border-sage-light focus:ring-dgreen'}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {passwordTooShort && (
+                  <p className="mt-1 text-sm text-red-600">Password must be at least 8 characters.</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-dgreen mb-1">Confirm Password *</label>
-                <input
-                  type="password"
-                  placeholder="Confirm password"
-                  required
-                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm password"
+                    required
+                    value={newUser.confirmPassword}
+                    onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+                    className={`w-full pr-12 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${passwordsMismatch ? 'border-red-300 focus:ring-red-500' : 'border-sage-light focus:ring-dgreen'}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {passwordsMismatch && (
+                  <p className="mt-1 text-sm text-red-600">Passwords do not match.</p>
+                )}
               </div>
             </div>
 
@@ -260,7 +367,8 @@ const AdminUserAccounts = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                disabled={!isFormValid}
+                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${isFormValid ? 'bg-dgreen text-cream hover:bg-opacity-90' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
               >
                 Add New User
               </button>

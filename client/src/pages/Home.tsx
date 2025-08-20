@@ -9,16 +9,19 @@ import Testimonials from "../components/Home/Testimonials";
 import About from "../components/Home/About";
 
 const Home = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect logged-in users to Products page
+  // Redirect logged-in users to appropriate area by role
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      console.log('🔄 Redirecting logged-in user to Products page...');
-      navigate('/products');
+      if (user && (user.role === 'admin' || user.role === 'manager' || user.role === 'staff')) {
+        navigate('/admin');
+      } else {
+        navigate('/products');
+      }
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, user, navigate]);
 
   // Show loading or redirect if user is logged in
   if (isLoading) {

@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminDashboardMain from '../components/admin/AdminDashboardMain';
 import AdminOrders from '../components/admin/AdminOrders';
@@ -15,9 +17,19 @@ import Footer from '../shared/Footer';
 // Main admin dashboard page component
 // TODO: When backend is connected, add authentication check for admin role
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading } = useAuth();
   // State management for active section
   // TODO: Consider using React Router for URL-based navigation when backend is ready
   const [activeSection, setActiveSection] = useState('dashboard');
+
+  useEffect(() => {
+    if (isLoading) return;
+    // Allow only staff roles
+    if (!isAuthenticated || !user || !['admin', 'manager', 'staff'].includes(user.role)) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, user, navigate]);
 
   // Function to render the appropriate content based on active section
   // TODO: When backend is connected, each section will fetch its own data

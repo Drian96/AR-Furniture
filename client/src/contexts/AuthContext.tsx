@@ -35,7 +35,7 @@ interface AuthContextType {
   
   // Authentication functions
   register: (userData: RegisterRequest) => Promise<void>;
-  login: (credentials: LoginRequest) => Promise<void>;
+  login: (credentials: LoginRequest) => Promise<User>;
   logout: () => Promise<void>;
   
   // Profile functions
@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Verify the token with the backend
           const userData = await verifyToken();
           setUser(userData);
-          console.log('✅ Token verified, user authenticated:', userData.email);
+          console.log('✅ Token verified, user authenticated:', userData.email, 'role:', userData.role);
         } else {
           console.log('❌ No stored token found');
         }
@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Login user with email and password
    * @param credentials - Login credentials
    */
-  const login = async (credentials: LoginRequest): Promise<void> => {
+  const login = async (credentials: LoginRequest): Promise<User> => {
     try {
       setIsLoading(true);
       console.log('🔐 Logging in user:', credentials.email);
@@ -139,6 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
       
       console.log('✅ Login successful:', response.user.email);
+      return response.user;
     } catch (error) {
       console.error('❌ Login failed:', error);
       throw error;

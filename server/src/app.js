@@ -10,6 +10,7 @@ const { testConnection } = require('./config/database');
 
 // Import routes
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -108,6 +109,9 @@ const API_PREFIX = '/api/v1';
 // All auth routes will be prefixed with /api/v1/auth
 app.use(`${API_PREFIX}/auth`, authRoutes);
 
+// User management routes - admin only
+app.use(`${API_PREFIX}/users`, userRoutes);
+
 // Root endpoint - API information
 app.get('/', (req, res) => {
   res.status(200).json({
@@ -116,6 +120,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       auth: `${API_PREFIX}/auth`,
+      users: `${API_PREFIX}/users`,
       health: '/health'
     },
     documentation: 'API documentation coming soon...'

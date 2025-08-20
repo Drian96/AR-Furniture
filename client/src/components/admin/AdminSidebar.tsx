@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   Package, 
@@ -10,6 +11,7 @@ import {
   FileText, 
   LogOut 
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Interface for admin sidebar component props
 // TODO: When connecting to backend, these props will handle admin navigation state
@@ -19,9 +21,17 @@ interface AdminSidebarProps {
 }
 
 const AdminSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) => {
+  const { user, logout } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false as any);
+  // Role-based permissions
+  // - admin: access all
+  // - manager: no access to user accounts, audit logs, system settings
+  // - staff: no access to reports, user accounts, audit logs, system settings
+  // Customer should not be here
+  const currentRole: 'admin' | 'manager' | 'staff' | 'customer' = (user?.role as any) || 'customer';
   // Admin navigation items configuration
   // TODO: When backend is connected, you can fetch admin permissions to show/hide certain items
-  const sidebarItems = [
+  const allItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'orders', label: 'Orders', icon: Package },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
@@ -33,18 +43,28 @@ const AdminSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) =>
     { id: 'audit', label: 'Audit logs', icon: FileText },
   ];
 
+  const sidebarItems = allItems.filter((item) => {
+    if (currentRole === 'admin') return true;
+    if (currentRole === 'manager') {
+      return !['users', 'audit'].includes(item.id);
+    }
+    if (currentRole === 'staff') {
+      return !['reports', 'users', 'audit'].includes(item.id);
+    }
+    return false;
+  });
+
   // TODO: When backend is connected, fetch admin data from your Express API
   // Example: const adminData = await fetch('/api/admin/profile')
   const mockAdminData = {
-    name: "Admin User", // TODO: Replace with actual admin name from backend
-    email: "admin@shop.com", // TODO: Replace with actual admin email from auth
-    role: "Administrator" // TODO: Get admin role from JWT token
+    name: user ? `${user.firstName} ${user.lastName}` : 'Admin User',
+    email: user?.email || 'admin@shop.com',
+    role: currentRole === 'admin' ? 'Administrator' : currentRole === 'manager' ? 'Manager' : 'Staff'
   };
 
   // TODO: When backend is ready, implement proper logout functionality
-  const handleLogout = () => {
-    // TODO: Clear admin session/token and redirect to login
-    console.log('Admin logout clicked');
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -96,7 +116,7 @@ const AdminSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) =>
         {/* Logout Button */}
         {/* TODO: When backend is ready, implement proper admin logout */}
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left 
                      text-red-600 hover:bg-red-50 hover:shadow-sm transition-all duration-200 ease-in-out"
         >
@@ -104,6 +124,33 @@ const AdminSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) =>
           <span className="text-sm font-medium">Logout</span>
         </button>
       </nav>
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <LogOut className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-dgreen mb-2">Logout</h3>
+              <p className="text-dgray">Are you sure you want to logout? You will be redirected to the landing page.</p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
