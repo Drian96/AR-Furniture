@@ -1,45 +1,48 @@
 import { CircleUserRound } from 'lucide-react';
 import { Link } from 'react-router-dom'; 
+import furnitureLogo from '../../assets/AR-Furniture_Logo.png';
+
 
 const Header = () => {
 
 
 
   return (
-    <header className="bg-lgray shadow-sm sticky top-0 z-50">
+    <header className="bg-cream top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-auto">
           {/* Logo/Site Title */}
           <div className="flex items-center">
-            <h1 className="text-2xl font-serif font-bold text-gray-900">
-              AR-Furniture
-            </h1>
+          <img 
+              src={furnitureLogo} 
+              alt="Furniture Logo" 
+              className="h-20 w-auto mt-2"
+            />
           </div>
 
           {/* Navigation Links (Desktop) */}
           <nav className="hidden md:flex space-x-8">
-            <a href="#home" className="text-gray-900 hover:text-dgreen">
+            <a href="#home" className="text-gray-900 hover:text-dgreen font-medium">
               Home
             </a>
-            <a href="#products" className="text-gray-900 hover:text-dgreen">
+            <a href="#products" className="text-gray-900 hover:text-dgreen font-medium">
               Products
             </a>
-            <a href="#about" className="text-gray-900 hover:text-dgreen">
+            <a href="#about" className="text-gray-900 hover:text-dgreen font-medium">
               About
             </a>
-            <a href="#contact" className="text-gray-900 hover:text-dgreen">
+            <a href="#contact" className="text-gray-900 hover:text-dgreen font-medium">
               Contact
             </a>
           </nav>
 
           {/* User Icon (to navigate to login page) */}
           <div className="flex items-center space-x-4">
-            <Link
+          <Link 
               to="/login"
-              className="text-primary hover:text-dgreen cursor-pointer p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-dgreen"
-              aria-label="Go to login page"
+              className="border hover:bg-lgreen hover:text-dgreen transition-all duration-200 rounded-xl px-6 py-2 font-medium text-m"
             >
-              <CircleUserRound className="w-7.5 h-7.5" />
+              Login
             </Link>
           </div>
         </div>

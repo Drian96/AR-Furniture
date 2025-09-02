@@ -435,3 +435,83 @@ export const adminDeleteUser = async (id: number) => {
   if (response.success) return true;
   throw new Error(response.message || 'Failed to delete user');
 };
+
+// =========================
+// Address management types
+// =========================
+export interface Address {
+  id: number;
+  user_id: number;
+  recipient_name: string;
+  phone?: string;
+  region?: string;
+  province?: string;
+  city?: string;
+  barangay?: string;
+  postal_code?: string;
+  street_address?: string;
+  address_type: 'home' | 'work' | 'other';
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAddressRequest {
+  recipient_name: string;
+  phone?: string;
+  region?: string;
+  province?: string;
+  city?: string;
+  barangay?: string;
+  postal_code?: string;
+  street_address?: string;
+  address_type?: 'home' | 'work' | 'other';
+}
+
+export interface UpdateAddressRequest extends CreateAddressRequest {}
+
+export interface AddressListResponse {
+  success: boolean;
+  addresses: Address[];
+}
+
+// =========================
+// Address API functions
+// =========================
+export const getUserAddresses = async (): Promise<Address[]> => {
+  const response = await apiRequest<AddressListResponse>('/addresses');
+  if (response.success && response.data) return response.data.addresses;
+  throw new Error(response.message || 'Failed to fetch addresses');
+};
+
+export const createAddress = async (payload: CreateAddressRequest): Promise<Address> => {
+  const response = await apiRequest<{ address: Address }>('/addresses', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (response.success && response.data) return response.data.address;
+  throw new Error(response.message || 'Failed to create address');
+};
+
+export const updateAddress = async (id: number, payload: UpdateAddressRequest): Promise<Address> => {
+  const response = await apiRequest<{ address: Address }>(`/addresses/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  if (response.success && response.data) return response.data.address;
+  throw new Error(response.message || 'Failed to update address');
+};
+
+export const deleteAddress = async (id: number): Promise<boolean> => {
+  const response = await apiRequest(`/addresses/${id}`, { method: 'DELETE' });
+  if (response.success) return true;
+  throw new Error(response.message || 'Failed to delete address');
+};
+
+export const setDefaultAddress = async (id: number): Promise<Address> => {
+  const response = await apiRequest<{ address: Address }>(`/addresses/${id}/default`, {
+    method: 'PUT',
+  });
+  if (response.success && response.data) return response.data.address;
+  throw new Error(response.message || 'Failed to set default address');
+};

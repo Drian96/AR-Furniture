@@ -50,7 +50,18 @@ CREATE INDEX idx_verification_codes_email ON verification_codes(email);
 
 
 
-
+CREATE TABLE addresses (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  recipient_name VARCHAR(100) NOT NULL,
+  phone VARCHAR(20),
+  full_address TEXT NOT NULL,
+  address_type VARCHAR(20) CHECK (address_type IN ('home', 'work', 'other')) DEFAULT 'home',
+  is_default BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
 
 

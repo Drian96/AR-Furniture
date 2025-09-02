@@ -11,6 +11,7 @@ const { testConnection } = require('./config/database');
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const addressRoutes = require('./routes/addresses');
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -112,6 +113,9 @@ app.use(`${API_PREFIX}/auth`, authRoutes);
 // User management routes - admin only
 app.use(`${API_PREFIX}/users`, userRoutes);
 
+// Address management routes - authenticated users
+app.use(`${API_PREFIX}/addresses`, addressRoutes);
+
 // Root endpoint - API information
 app.get('/', (req, res) => {
   res.status(200).json({
@@ -121,6 +125,7 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: `${API_PREFIX}/auth`,
       users: `${API_PREFIX}/users`,
+      addresses: `${API_PREFIX}/addresses`,
       health: '/health'
     },
     documentation: 'API documentation coming soon...'

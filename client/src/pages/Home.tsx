@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Header from "../components/Home/Header";
+import Header from "../components/Home/HeaderRight";
 import Footer from "../shared/Footer";
 import Hero from "../components/Home/Hero";
 import FeaturedProducts from "../components/Home/FeaturedProducts";

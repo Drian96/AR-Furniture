@@ -1,51 +1,70 @@
-import { useState } from 'react';
-import { Search, Eye, Edit, Trash2, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Eye, Edit, Trash2, X, CheckCircle } from 'lucide-react';
+import { adminListUsers, adminUpdateUser, adminDeleteUser } from '../../services/api';
 
 // Customer management component for admin
-// TODO: When backend is connected, fetch real customer data from your Express API
 const AdminCustomer = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
   const [showEditCustomer, setShowEditCustomer] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [customers, setCustomers] = useState<any[]>([]);
 
-  // TODO: Replace with actual customer data from backend API
-  const customers = [
-    {
-      id: "CUST001",
-      name: "John Smith",
-      email: "john@example.com",
-      orders: 23,
-      totalSpent: "₱7,450",
-      lastOrder: "2024-01-15",
-      status: "Active",
-      phone: "+63 912 345 6789",
-      address: "123 Main St, Manila"
-    },
-    {
-      id: "CUST002", 
-      name: "Sarah Wilson",
-      email: "sarah@example.com",
-      orders: 15,
-      totalSpent: "₱4,200",
-      lastOrder: "2024-01-10",
-      status: "Active",
-      phone: "+63 917 456 7890",
-      address: "456 Oak Ave, Quezon City"
-    },
-    {
-      id: "CUST003",
-      name: "Mike Johnson",
-      email: "mike@example.com", 
-      orders: 8,
-      totalSpent: "₱2,100",
-      lastOrder: "2024-01-05",
-      status: "Inactive",
-      phone: "+63 918 567 8901",
-      address: "789 Pine St, Makati"
-    }
-  ];
+  // Edit customer form state
+  const [editCustomer, setEditCustomer] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    status: '',
+    address: ''
+  });
+
+  // Fetch customers from database
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        setLoading(true);
+        const data = await adminListUsers();
+        // Filter only customers (role = 'customer')
+        const customerUsers = data.users.filter((u: any) => u.role === 'customer');
+        
+        // Map the data to match our component structure
+        const mappedCustomers = customerUsers.map((u: any) => ({
+          id: u.id,
+          name: `${u.firstName || u.first_name} ${u.lastName || u.last_name}`,
+          email: u.email,
+          phone: u.phone || 'N/A',
+          address: 'N/A', // Address field not available in current User model
+          orders: 0, // Orders field not available in current User model
+          totalSpent: '₱0', // Total spent field not available in current User model
+          lastOrder: 'N/A', // Last order field not available in current User model
+          status: (u.status || 'active').charAt(0).toUpperCase() + (u.status || 'active').slice(1),
+          firstName: u.firstName || u.first_name,
+          lastName: u.lastName || u.last_name
+        }));
+        
+        setCustomers(mappedCustomers);
+      } catch (error) {
+        console.error('Failed to load customers:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCustomers();
+  }, []);
+
+  // Filter customers based on search term and status
+  const filteredCustomers = customers.filter(customer => {
+    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.phone.includes(searchTerm);
+    return matchesSearch;
+  });
 
   // TODO: When backend is ready, implement actual customer details fetching
   const handleViewCustomer = (customer: any) => {
@@ -54,11 +73,18 @@ const AdminCustomer = () => {
     // TODO: Fetch detailed customer data including order history
   };
 
-  // TODO: When backend is ready, implement edit/delete functionality
+  // Handle edit customer - populate form with customer data
   const handleEditCustomer = (customer: any) => {
     setSelectedCustomer(customer);
+    // Pre-populate form with customer data
+    setEditCustomer({
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      status: customer.status,
+      address: customer.address
+    });
     setShowEditCustomer(true);
-    // TODO: Pre-populate form with customer data
   };
 
   const handleDeleteCustomer = (customer: any) => {
@@ -66,18 +92,98 @@ const AdminCustomer = () => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    console.log('Deleting customer:', selectedCustomer?.id);
-    // TODO: API call to delete customer
-    setShowDeleteConfirm(false);
-    setSelectedCustomer(null);
+  const confirmDelete = async () => {
+    try {
+      await adminDeleteUser(Number(selectedCustomer?.id));
+      setShowDeleteConfirm(false);
+      setSelectedCustomer(null);
+      
+      // Refresh customer list
+      const data = await adminListUsers();
+      const customerUsers = data.users.filter((u: any) => u.role === 'customer');
+      const mappedCustomers = customerUsers.map((u: any) => ({
+        id: u.id,
+        name: `${u.firstName || u.first_name} ${u.lastName || u.last_name}`,
+        email: u.email,
+        phone: u.phone || 'N/A',
+        address: 'N/A', // Address field not available in current User model
+        orders: 0, // Orders field not available in current User model
+        totalSpent: '₱0', // Total spent field not available in current User model
+        lastOrder: 'N/A', // Last order field not available in current User model
+        status: (u.status || 'active').charAt(0).toUpperCase() + (u.status || 'active').slice(1),
+        firstName: u.firstName || u.first_name,
+        lastName: u.lastName || u.last_name
+      }));
+      setCustomers(mappedCustomers);
+      
+      // Show success message
+      setSuccessMessage('Customer has been deleted successfully.');
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to delete customer:', error);
+      setSuccessMessage('Failed to delete customer. Please try again.');
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
+    }
   };
 
-  const handleUpdateCustomer = (formData: any) => {
-    console.log('Updating customer:', selectedCustomer?.id, formData);
-    // TODO: API call to update customer (excluding password)
-    setShowEditCustomer(false);
-    setSelectedCustomer(null);
+  const handleUpdateCustomer = async (formData: any) => {
+    try {
+      // Split the full name into first and last name
+      const nameParts = formData.name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Prepare the data for the API call
+      const updateData = {
+        firstName,
+        lastName,
+        email: formData.email,
+        phone: formData.phone,
+        status: formData.status.toLowerCase()
+      };
+      
+      await adminUpdateUser(Number(selectedCustomer.id), updateData);
+      setShowEditCustomer(false);
+      setSelectedCustomer(null);
+      
+      // Refresh customer list
+      const data = await adminListUsers();
+      const customerUsers = data.users.filter((u: any) => u.role === 'customer');
+      const mappedCustomers = customerUsers.map((u: any) => ({
+        id: u.id,
+        name: `${u.firstName || u.first_name} ${u.lastName || u.last_name}`,
+        email: u.email,
+        phone: u.phone || 'N/A',
+        address: 'N/A', // Address field not available in current User model
+        orders: 0, // Orders field not available in current User model
+        totalSpent: '₱0', // Total spent field not available in current User model
+        lastOrder: 'N/A', // Last order field not available in current User model
+        status: (u.status || 'active').charAt(0).toUpperCase() + (u.status || 'active').slice(1),
+        firstName: u.firstName || u.first_name,
+        lastName: u.lastName || u.last_name
+      }));
+      setCustomers(mappedCustomers);
+      
+      // Show success message
+      setSuccessMessage('Customer information has been updated successfully.');
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to update customer:', error);
+      setSuccessMessage('Failed to update customer. Please try again.');
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
+    }
   };
 
   return (
@@ -101,12 +207,26 @@ const AdminCustomer = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-dgray hover:text-dgreen"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <select className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen">
             <option>All Status</option>
             <option>Active</option>
             <option>Inactive</option>
           </select>
+        </div>
+        
+        {/* Customer count */}
+        <div className="mb-4 text-sm text-dgray">
+          Showing {filteredCustomers.length} of {customers.length} customers
+          {searchTerm && ` matching "${searchTerm}"`}
         </div>
 
         {/* Customers Table */}
@@ -125,44 +245,56 @@ const AdminCustomer = () => {
               </tr>
             </thead>
             <tbody>
-              {customers.map((customer) => (
-                <tr key={customer.id} className="border-b border-sage-light hover:bg-cream">
-                  <td className="py-3 px-4 text-dgreen font-medium">{customer.name}</td>
-                  <td className="py-3 px-4 text-dgray">{customer.email}</td>
-                  <td className="py-3 px-4 text-dgray">{customer.orders}</td>
-                  <td className="py-3 px-4 text-dgreen font-medium">{customer.totalSpent}</td>
-                  <td className="py-3 px-4 text-dgray">{customer.lastOrder}</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      customer.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {customer.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleViewCustomer(customer)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleEditCustomer(customer)}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCustomer(customer)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-dgray">Loading customers...</td>
+                </tr>
+              ) : filteredCustomers.length > 0 ? (
+                filteredCustomers.map((customer) => (
+                  <tr key={customer.id} className="border-b border-sage-light hover:bg-cream">
+                    <td className="py-3 px-4 text-dgreen font-medium">{customer.name}</td>
+                    <td className="py-3 px-4 text-dgray">{customer.email}</td>
+                    <td className="py-3 px-4 text-dgray">{customer.orders}</td>
+                    <td className="py-3 px-4 text-dgreen font-medium">{customer.totalSpent}</td>
+                    <td className="py-3 px-4 text-dgray">{customer.lastOrder}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        customer.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {customer.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleViewCustomer(customer)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleEditCustomer(customer)}
+                          className="text-green-600 hover:text-green-800"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCustomer(customer)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-dgray">
+                    {searchTerm ? 'No customers found matching your search.' : 'No customers available.'}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -214,7 +346,6 @@ const AdminCustomer = () => {
       )}
 
       {/* Edit Customer Modal */}
-      {/* TODO: When backend is ready, implement actual form submission with pre-populated data */}
       {showEditCustomer && selectedCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
@@ -228,14 +359,22 @@ const AdminCustomer = () => {
               </button>
             </div>
 
-            <form className="space-y-4">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateCustomer(editCustomer);
+              }}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Full Name *</label>
                   <input
                     type="text"
-                    defaultValue={selectedCustomer.name}
+                    value={editCustomer.name}
                     placeholder="Enter full name"
+                    required
+                    onChange={(e) => setEditCustomer({ ...editCustomer, name: e.target.value })}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   />
                 </div>
@@ -243,8 +382,10 @@ const AdminCustomer = () => {
                   <label className="block text-sm font-medium text-dgreen mb-1">Email Address *</label>
                   <input
                     type="email"
-                    defaultValue={selectedCustomer.email}
+                    value={editCustomer.email}
                     placeholder="Enter email"
+                    required
+                    onChange={(e) => setEditCustomer({ ...editCustomer, email: e.target.value })}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   />
                 </div>
@@ -255,15 +396,17 @@ const AdminCustomer = () => {
                   <label className="block text-sm font-medium text-dgreen mb-1">Phone Number</label>
                   <input
                     type="tel"
-                    defaultValue={selectedCustomer.phone}
+                    value={editCustomer.phone}
                     placeholder="Enter phone number"
+                    onChange={(e) => setEditCustomer({ ...editCustomer, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Status</label>
                   <select 
-                    defaultValue={selectedCustomer.status}
+                    value={editCustomer.status}
+                    onChange={(e) => setEditCustomer({ ...editCustomer, status: e.target.value })}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   >
                     <option value="Active">Active</option>
@@ -276,8 +419,9 @@ const AdminCustomer = () => {
                 <label className="block text-sm font-medium text-dgreen mb-1">Address</label>
                 <textarea
                   rows={3}
-                  defaultValue={selectedCustomer.address}
+                  value={editCustomer.address}
                   placeholder="Enter address"
+                  onChange={(e) => setEditCustomer({ ...editCustomer, address: e.target.value })}
                   className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 ></textarea>
               </div>
@@ -299,10 +443,6 @@ const AdminCustomer = () => {
                 </button>
                 <button
                   type="submit"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleUpdateCustomer({});
-                  }}
                   className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
                 >
                   Update Customer
@@ -341,6 +481,27 @@ const AdminCustomer = () => {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && successMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 text-center">
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-dgreen mb-2">Success!</h3>
+              <p className="text-dgray">{successMessage}</p>
+            </div>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

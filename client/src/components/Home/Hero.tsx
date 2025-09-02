@@ -4,9 +4,9 @@ const Hero = () => {
   return (
   
     <section id="home"
-    className="relative  min-h-screen bg-cream flex items-center">
+    className="relative bg-cream min-h-screen flex items-center">
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mb-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="animate-fade-in">
             <h1 className="text-5xl lg:text-6xl font-serif font-bold text-dgreen mb-6 leading-tight">

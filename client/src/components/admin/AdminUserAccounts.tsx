@@ -11,6 +11,7 @@ const AdminUserAccounts = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Add-user form state
   const [newUser, setNewUser] = useState({
@@ -23,6 +24,17 @@ const AdminUserAccounts = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Edit-user form state
+  const [editUser, setEditUser] = useState({
+    fullName: '',
+    email: '',
+    role: '',
+    status: '',
+    contact: '',
+    password: '',
+    confirmPassword: ''
+  });
 
   const [userAccounts, setUserAccounts] = useState<Array<any>>([]);
 
@@ -78,6 +90,7 @@ const AdminUserAccounts = () => {
         console.error('Create user failed', e);
       });
     setShowAddUserModal(false);
+    setSuccessMessage('User account has been created successfully.');
     setShowSuccessModal(true);
     
     // Auto-hide success modal after 3 seconds
@@ -86,19 +99,37 @@ const AdminUserAccounts = () => {
     }, 3000);
   };
 
-  // TODO: When backend is ready, implement edit functionality
   const handleEditUser = (user: any) => {
     setSelectedUser(user);
+    // Pre-populate form with user data
+    setEditUser({
+      fullName: user.name,
+      email: user.email,
+      role: user.role.toLowerCase(),
+      status: user.status.toLowerCase(),
+      contact: '', // We don't have contact in the table, so leave empty
+      password: '',
+      confirmPassword: ''
+    });
     setShowEditUserModal(true);
-    // TODO: Pre-populate form with user data
   };
 
   const handleUpdateUser = async (formData: any) => {
     if (!selectedUser) return;
     try {
-      await adminUpdateUser(Number(selectedUser.id), formData);
+      // Prepare the data for the API call
+      const updateData = {
+        fullName: formData.fullName,
+        email: formData.email,
+        role: formData.role,
+        status: formData.status
+      };
+      
+      await adminUpdateUser(Number(selectedUser.id), updateData);
       setShowEditUserModal(false);
       setSelectedUser(null);
+      
+      // Refresh the user list
       const data = await adminListUsers();
       const filtered = data.users.filter(u => u.role !== 'customer');
       const mapped = filtered.map(u => ({
@@ -110,6 +141,13 @@ const AdminUserAccounts = () => {
         status: (u.status || '').charAt(0).toUpperCase() + (u.status || '').slice(1),
       }));
       setUserAccounts(mapped);
+      
+      // Show success message
+      setSuccessMessage('User account has been updated successfully.');
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
     } catch (e) {
       console.error('Update user failed', e);
     }
@@ -380,7 +418,7 @@ const AdminUserAccounts = () => {
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
             <div className="mb-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -389,7 +427,7 @@ const AdminUserAccounts = () => {
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-dgreen mb-2">Success!</h3>
-              <p className="text-dgray">User account has been created successfully.</p>
+              <p className="text-dgray">{successMessage}</p>
             </div>
           </div>
         </div>
@@ -397,7 +435,7 @@ const AdminUserAccounts = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
             <div className="mb-6">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -428,7 +466,6 @@ const AdminUserAccounts = () => {
       )}
 
       {/* Edit User Modal */}
-      {/* TODO: When backend is ready, implement actual form submission with pre-populated data */}
       {showEditUserModal && selectedUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
@@ -445,7 +482,7 @@ const AdminUserAccounts = () => {
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
-                handleUpdateUser({});
+                handleUpdateUser(editUser);
               }} 
               className="space-y-4"
             >
@@ -454,9 +491,10 @@ const AdminUserAccounts = () => {
                   <label className="block text-sm font-medium text-dgreen mb-1">Name *</label>
                   <input
                     type="text"
-                    defaultValue={selectedUser.name}
+                    value={editUser.fullName}
                     placeholder="Enter full name"
                     required
+                    onChange={(e) => setEditUser({ ...editUser, fullName: e.target.value })}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   />
                 </div>
@@ -464,9 +502,10 @@ const AdminUserAccounts = () => {
                   <label className="block text-sm font-medium text-dgreen mb-1">Email *</label>
                   <input
                     type="email"
-                    defaultValue={selectedUser.email}
+                    value={editUser.email}
                     placeholder="Email address"
                     required
+                    onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   />
                 </div>
@@ -476,25 +515,27 @@ const AdminUserAccounts = () => {
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Position *</label>
                   <select 
-                    defaultValue={selectedUser.role}
+                    value={editUser.role}
                     required
+                    onChange={(e) => setEditUser({ ...editUser, role: (e.target.value || '').toLowerCase() })}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   >
                     <option value="">Select position</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Staff">Staff</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                    <option value="staff">Staff</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Status *</label>
                   <select 
-                    defaultValue={selectedUser.status}
+                    value={editUser.status}
                     required
+                    onChange={(e) => setEditUser({ ...editUser, status: (e.target.value || '').toLowerCase() })}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
                   </select>
                 </div>
               </div>
