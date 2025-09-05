@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Search, Eye, Edit, Trash2, X, CheckCircle } from 'lucide-react';
-import { adminListUsers, adminUpdateUser, adminDeleteUser } from '../../services/api';
+import { Search, Eye, Edit, Trash2, X, CheckCircle, MapPin } from 'lucide-react';
+import { adminListUsers, adminUpdateUser, adminDeleteUser, getAddressesByUserId } from '../../services/api';
 
 // Customer management component for admin
 const AdminCustomer = () => {
@@ -13,6 +13,8 @@ const AdminCustomer = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   // Edit customer form state
   const [editCustomer, setEditCustomer] = useState({
@@ -66,11 +68,22 @@ const AdminCustomer = () => {
     return matchesSearch;
   });
 
-  // TODO: When backend is ready, implement actual customer details fetching
-  const handleViewCustomer = (customer: any) => {
+  // Fetch customer details including addresses
+  const handleViewCustomer = async (customer: any) => {
     setSelectedCustomer(customer);
     setShowCustomerDetails(true);
-    // TODO: Fetch detailed customer data including order history
+    
+    // Fetch customer addresses
+    try {
+      setLoadingAddresses(true);
+      const addresses = await getAddressesByUserId(customer.id);
+      setCustomerAddresses(addresses);
+    } catch (error) {
+      console.error('Failed to load customer addresses:', error);
+      setCustomerAddresses([]);
+    } finally {
+      setLoadingAddresses(false);
+    }
   };
 
   // Handle edit customer - populate form with customer data
@@ -322,14 +335,62 @@ const AdminCustomer = () => {
                   <p className="text-sm text-dgray mb-1">Name: {selectedCustomer.name}</p>
                   <p className="text-sm text-dgray mb-1">Email: {selectedCustomer.email}</p>
                   <p className="text-sm text-dgray mb-1">Phone: {selectedCustomer.phone}</p>
-                  <p className="text-sm text-dgray">Address: {selectedCustomer.address}</p>
+                  <p className="text-sm text-dgray">Status: {selectedCustomer.status}</p>
                 </div>
                 <div>
                   <h3 className="font-semibold text-dgreen mb-2">Order Statistics</h3>
                   <p className="text-sm text-dgray mb-1">Total Orders: {selectedCustomer.orders}</p>
                   <p className="text-sm text-dgray mb-1">Total Spent: {selectedCustomer.totalSpent}</p>
                   <p className="text-sm text-dgray mb-1">Last Order: {selectedCustomer.lastOrder}</p>
-                  <p className="text-sm text-dgray">Status: {selectedCustomer.status}</p>
+                  <p className="text-sm text-dgray">Customer ID: {selectedCustomer.id}</p>
+                </div>
+              </div>
+
+              {/* Customer Addresses Section */}
+              <div>
+                <h3 className="font-semibold text-dgreen mb-2 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Customer Addresses
+                </h3>
+                <div className="bg-cream rounded-lg p-4">
+                  {loadingAddresses ? (
+                    <p className="text-sm text-dgray">Loading addresses...</p>
+                  ) : customerAddresses.length > 0 ? (
+                    <div className="space-y-3">
+                      {customerAddresses.map((address, index) => (
+                        <div key={address.id} className="border border-sage-light rounded-lg p-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-dgreen">{address.recipient_name}</span>
+                                {address.is_default && (
+                                  <span className="bg-dgreen text-cream text-xs px-2 py-1 rounded-full">
+                                    Default
+                                  </span>
+                                )}
+                                <span className="bg-sage-light text-dgreen text-xs px-2 py-1 rounded-full">
+                                  {address.address_type}
+                                </span>
+                              </div>
+                              {address.phone && (
+                                <p className="text-sm text-dgray mb-1">Phone: {address.phone}</p>
+                              )}
+                              <p className="text-sm text-dgray">
+                                {address.street_address && `${address.street_address}, `}
+                                {address.barangay && `${address.barangay}, `}
+                                {address.city && `${address.city}, `}
+                                {address.province && `${address.province}, `}
+                                {address.region && `${address.region}`}
+                                {address.postal_code && ` ${address.postal_code}`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-dgray">No addresses found for this customer.</p>
+                  )}
                 </div>
               </div>
 

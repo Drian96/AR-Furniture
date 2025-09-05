@@ -82,10 +82,11 @@ const registerValidation = [
     .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
 
   // Validate phone number (optional)
+  // Accept international (+XXXXXXXX) or local starting with 0
   body('phone')
-    .optional()                // This field is optional
+    .optional()
     .trim()
-    .matches(/^[\+]?[1-9][\d]{0,15}$/) // International phone format
+    .matches(/^(?:\+?[1-9]\d{6,14}|0\d{9,14})$/)
     .withMessage('Please enter a valid phone number'),
 
   // Validate date of birth (optional)
@@ -203,10 +204,11 @@ const profileUpdateValidation = [
     .withMessage('Last name can only contain letters and spaces'),
 
   // Validate phone number
+  // Accept international (+XXXXXXXX) or local starting with 0
   body('phone')
     .optional()
     .trim()
-    .matches(/^[\+]?[1-9][\d]{0,15}$/)
+    .matches(/^(?:\+?[1-9]\d{6,14}|0\d{9,14})$/)
     .withMessage('Please enter a valid phone number'),
 
   // Validate date of birth

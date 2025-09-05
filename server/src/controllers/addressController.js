@@ -198,10 +198,37 @@ const setDefaultAddress = async (req, res) => {
   }
 };
 
+// Get addresses for a specific user (admin function)
+const getAddressesByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    
+    // Verify the user exists
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    const addresses = await Address.findAll({
+      where: { user_id: userId },
+      order: [['is_default', 'DESC'], ['created_at', 'DESC']]
+    });
+    
+    res.json({ success: true, data: { addresses } });
+  } catch (error) {
+    console.error('Error fetching addresses by user ID:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch addresses' });
+  }
+};
+
 module.exports = {
   getUserAddresses,
   createAddress,
   updateAddress,
   deleteAddress,
-  setDefaultAddress
+  setDefaultAddress,
+  getAddressesByUserId
 };

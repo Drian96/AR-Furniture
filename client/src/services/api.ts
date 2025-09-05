@@ -515,3 +515,10 @@ export const setDefaultAddress = async (id: number): Promise<Address> => {
   if (response.success && response.data) return response.data.address;
   throw new Error(response.message || 'Failed to set default address');
 };
+
+// Get addresses for a specific user (admin function)
+export const getAddressesByUserId = async (userId: number): Promise<Address[]> => {
+  const response = await apiRequest<AddressListResponse>(`/addresses/user/${userId}`);
+  if (response.success && response.data) return response.data.addresses;
+  throw new Error(response.message || 'Failed to fetch user addresses');
+};

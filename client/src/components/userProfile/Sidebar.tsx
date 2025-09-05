@@ -1,4 +1,5 @@
 import { User, Package, MapPin, Shield, Settings as SettingsIcon } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Interface for sidebar component props
 // TODO: When connecting to backend, these props will handle user navigation state
@@ -8,6 +9,8 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
+  const { user } = useAuth();
+
   // Navigation items configuration
   // TODO: When backend is connected, you can fetch user permissions to show/hide certain items
   const sidebarItems = [
@@ -18,12 +21,9 @@ const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
-  // TODO: When backend is connected, fetch user data from your Express API
-  // Example: const userData = await fetch('/api/user/profile')
-  const mockUserData = {
-    name: "John Doe", // TODO: Replace with actual user name from backend
-    email: "john.doe@example.com" // TODO: Replace with actual user email from auth
-  };
+  // Fallbacks for user display if not loaded yet
+  const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : '...';
+  const displayEmail = user?.email || '';
 
   return (
     <div className="w-64 bg-lgreen rounded-lg p-6 h-fit">
@@ -33,10 +33,10 @@ const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
         <div className="w-20 h-20 bg-sage-medium rounded-full mx-auto mb-3 flex items-center justify-center">
           <User className="w-10 h-10 text-dgreen" />
         </div>
-        {/* User Name - TODO: Get from JWT token or user session */}
-        <h3 className="text-dgreen font-semibold">{mockUserData.name}</h3>
-        {/* User Email - TODO: Get from authenticated user data */}
-        <p className="text-dgray text-sm">{mockUserData.email}</p>
+        {/* User Name - from auth context */}
+        <h3 className="text-dgreen font-semibold">{displayName}</h3>
+        {/* User Email - from auth context */}
+        <p className="text-dgray text-sm">{displayEmail}</p>
       </div>
       
       {/* Navigation Menu */}

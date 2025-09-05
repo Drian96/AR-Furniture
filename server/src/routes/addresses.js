@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 const {
   getUserAddresses,
   createAddress,
   updateAddress,
   deleteAddress,
-  setDefaultAddress
+  setDefaultAddress,
+  getAddressesByUserId
 } = require('../controllers/addressController');
 
 // All routes require authentication
@@ -26,5 +27,8 @@ router.delete('/:id', deleteAddress);
 
 // PUT /api/addresses/:id/default - Set an address as default
 router.put('/:id/default', setDefaultAddress);
+
+// GET /api/addresses/user/:userId - Get addresses for a specific user (admin function)
+router.get('/user/:userId', requireRole(['admin', 'manager', 'staff']), getAddressesByUserId);
 
 module.exports = router;

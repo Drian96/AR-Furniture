@@ -26,7 +26,7 @@ const Hero = () => {
               </Link>
               
               <Link to="/admin"
-               className="bg-lgreen text-lg px-8 py-4 rounded-lg hover:bg-dgreen transition-colors duration-300 cursor-pointer">
+               className="bg-lgreen text-lg px-8 py-4 rounded-lg hover:bg-dgreen transition-colors duration-300 cursor-pointer text-center">
                 Shop Collection
               </Link>
             </div>

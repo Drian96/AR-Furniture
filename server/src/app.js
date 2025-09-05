@@ -6,7 +6,8 @@ const morgan = require('morgan'); // HTTP request logger
 const rateLimit = require('express-rate-limit'); // Rate limiting middleware
 
 // Import database configuration
-const { testConnection } = require('./config/database');
+const { sequelize, testConnection } = require('./config/database');
+require('./models'); // ensure models and associations are registered before syncing
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -161,6 +162,11 @@ const startServer = async (port = process.env.PORT || 5000) => {
     // Test database connection
     console.log('📊 Testing database connection...');
     await testConnection();
+    
+    // Sync database schema (create/update tables in Supabase)
+    console.log('🛠 Syncing database schema...');
+    await sequelize.sync({ alter: true });
+    console.log('✅ Database schema synced.');
     
     // Start the HTTP server
     app.listen(port, () => {
