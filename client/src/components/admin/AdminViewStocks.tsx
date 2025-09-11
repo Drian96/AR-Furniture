@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
+import { productService, supabase, PRODUCT_IMAGES_BUCKET, ensureStorageAuth, type NewProductData, type Product, type ProductImage } from '../../services/supabase';
 
 // Stock management component for admin
 // TODO: When backend is connected, fetch real inventory data from your Express API
@@ -7,80 +8,320 @@ const AdminViewStocks = () => {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [showAddConfirm, setShowAddConfirm] = useState(false);
+  const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
 
-  // TODO: Replace with actual inventory data from backend API
-  const inventoryStats = {
-    totalInventoryValue: "₱146,269.92", // TODO: Fetch from /api/admin/inventory/value
-    lowStockItems: "2", // TODO: Fetch items below minimum threshold
-    outOfStockItems: "0" // TODO: Fetch items with zero quantity
+  // Real data state
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productImages, setProductImages] = useState<Record<string, ProductImage[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Local state for Add Item form (controlled inputs)
+  type NewItemForm = {
+    name: string;
+    code: string;
+    category: string;
+    supplier: string;
+    price: string; // keep as string for controlled input; convert when submitting
+    quantity: string; // keep as string
+    minStock: string; // keep as string
+    description: string;
+    images: File[]; // selected image files
   };
 
-  // TODO: Replace with actual stock data from backend
-  const stockItems = [
-    {
-      id: "SKU001",
-      name: "Power Drill Kit KJ-2000",
-      category: "Power Tools", 
-      supplier: "Skillset",
-      quantity: 45,
-      price: "₱3,199.99",
-      status: "In Stock"
-    },
-    {
-      id: "HAS9900",
-      name: "Premium Hammer Set Pro",
-      category: "Hand Tools",
-      supplier: "Stanley", 
-      quantity: 8,
-      price: "₱250.99",
-      status: "Low Stock"
-    },
-    {
-      id: "SDG500",
-      name: "Industrial Screwdriver Kit",
-      category: "Hand Tools",
-      supplier: "Bosch",
-      quantity: 0,
-      price: "₱220.99", 
-      status: "Out of Stock"
+  const [newItemForm, setNewItemForm] = useState<NewItemForm>({
+    name: '',
+    code: '',
+    category: '',
+    supplier: '',
+    price: '',
+    quantity: '',
+    minStock: '',
+    description: '',
+    images: []
+  });
+
+  // Basic validation error messages
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  
+  // Loading state for form submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Edit form state (similar to Add form)
+  const [editForm, setEditForm] = useState<NewItemForm>({
+    name: '',
+    code: '',
+    category: '',
+    supplier: '',
+    price: '',
+    quantity: '',
+    minStock: '',
+    description: '',
+    images: []
+  });
+  const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({});
+  const [isUpdating, setIsUpdating] = useState(false);
+  // Track images the user marked for deletion during this edit session
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
+
+  // Derived previews for images
+  const imagePreviews = useMemo(() => {
+    return newItemForm.images.map((file) => URL.createObjectURL(file));
+  }, [newItemForm.images]);
+
+  const editImagePreviews = useMemo(() => {
+    return editForm.images.map((file) => URL.createObjectURL(file));
+  }, [editForm.images]);
+
+  // Fetch products from Supabase
+  const fetchProducts = async () => {
+    try {
+      setIsLoading(true);
+      const fetchedProducts = await productService.getProducts();
+      setProducts(fetchedProducts);
+      
+      // Fetch images for each product
+      const imagesMap: Record<string, ProductImage[]> = {};
+      for (const product of fetchedProducts) {
+        const images = await productService.getProductImages(product.id);
+        imagesMap[product.id] = images;
+      }
+      setProductImages(imagesMap);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  // Load products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const resetAddForm = () => {
+    setNewItemForm({
+      name: '',
+      code: '',
+      category: '',
+      supplier: '',
+      price: '',
+      quantity: '',
+      minStock: '',
+      description: '',
+      images: []
+    });
+    setFormErrors({});
+  };
+
+  const resetEditForm = () => {
+    setEditForm({
+      name: '',
+      code: '',
+      category: '',
+      supplier: '',
+      price: '',
+      quantity: '',
+      minStock: '',
+      description: '',
+      images: []
+    });
+    setEditFormErrors({});
+  };
+
+  const validateAddForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!newItemForm.name.trim()) errors.name = 'Product name is required';
+    if (!newItemForm.category.trim()) errors.category = 'Category is required';
+    if (!newItemForm.supplier.trim()) errors.supplier = 'Supplier is required';
+    if (!newItemForm.price.trim() || Number(newItemForm.price) < 0) errors.price = 'Enter a valid price';
+    if (!newItemForm.quantity.trim() || Number(newItemForm.quantity) < 0) errors.quantity = 'Enter a valid quantity';
+    if (newItemForm.minStock && Number(newItemForm.minStock) < 0) errors.minStock = 'Must be 0 or greater';
+    // Images optional; you can require at least 1 if desired
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateEditForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!editForm.name.trim()) errors.name = 'Product name is required';
+    if (!editForm.category.trim()) errors.category = 'Category is required';
+    if (!editForm.supplier.trim()) errors.supplier = 'Supplier is required';
+    if (!editForm.price.trim() || Number(editForm.price) < 0) errors.price = 'Enter a valid price';
+    if (!editForm.quantity.trim() || Number(editForm.quantity) < 0) errors.quantity = 'Enter a valid quantity';
+    if (editForm.minStock && Number(editForm.minStock) < 0) errors.minStock = 'Must be 0 or greater';
+    setEditFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleImageChange = (files: FileList | null) => {
+    if (!files) return;
+    const fileArray = Array.from(files);
+    setNewItemForm((prev) => ({ ...prev, images: [...prev.images, ...fileArray] }));
+  };
+
+  const handleEditImageChange = (files: FileList | null) => {
+    if (!files) return;
+    const fileArray = Array.from(files);
+    setEditForm((prev) => ({ ...prev, images: [...prev.images, ...fileArray] }));
+  };
+
+  const removeImageAtIndex = (index: number) => {
+    setNewItemForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  const removeEditImageAtIndex = (index: number) => {
+    setEditForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Calculate real inventory stats from products
+  const inventoryStats = useMemo(() => {
+    const totalValue = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+    const lowStockItems = products.filter(product => product.quantity <= product.min_stock && product.quantity > 0).length;
+    const outOfStockItems = products.filter(product => product.quantity === 0).length;
+    
+    return {
+      totalInventoryValue: `₱${totalValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+      lowStockItems: lowStockItems.toString(),
+      outOfStockItems: outOfStockItems.toString()
+    };
+  }, [products]);
+
+  // Filter products based on search and filters
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.supplier.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'All Categories' || product.category === selectedCategory;
+      const matchesStatus = selectedStatus === 'All Status' || product.status === selectedStatus;
+      
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [products, searchTerm, selectedCategory, selectedStatus]);
 
   // TODO: When backend is ready, implement actual item creation
-  const handleAddItem = (formData: any) => {
+  const handleAddItem = async (formData: NewProductData, imageFiles: File[]) => {
+    try {
+      setIsSubmitting(true);
     console.log('Adding new item:', formData);
-    // TODO: API call to create new inventory item
+      
+      // Create product in Supabase
+      const result = await productService.createProduct(formData, imageFiles);
+      console.log('✅ Product created successfully:', result);
+      
+      // Close modals and reset form
     setShowAddItemModal(false);
+      setShowAddConfirm(false);
+      resetAddForm();
+      
+      // Refresh the products list to show the new item
+      await fetchProducts();
+      
+    } catch (error) {
+      console.error('❌ Failed to create product:', error);
+      // TODO: Show error message to user (you can add a toast notification here)
+      alert('Failed to create product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // TODO: When backend is ready, implement edit/delete functionality
-  const handleEditItem = (item: any) => {
+  // Edit item functionality
+  const handleEditItem = (item: Product) => {
     setSelectedItem(item);
+    setRemovedImageIds([]);
+    // Pre-populate edit form with item data
+    setEditForm({
+      name: item.name,
+      code: item.code || '',
+      category: item.category,
+      supplier: item.supplier,
+      price: item.price.toString(),
+      quantity: item.quantity.toString(),
+      minStock: item.min_stock.toString(),
+      description: item.description || '',
+      images: [] // New images to add
+    });
+    setEditFormErrors({});
     setShowEditItemModal(true);
-    // TODO: Pre-populate form with item data
   };
 
-  const handleDeleteItem = (item: any) => {
+  const handleDeleteItem = (item: Product) => {
     setSelectedItem(item);
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    console.log('Deleting item:', selectedItem?.id);
-    // TODO: API call to delete item
+  const confirmDelete = async () => {
+    if (!selectedItem) return;
+    
+    try {
+      await productService.deleteProduct(selectedItem.id);
+      console.log('✅ Product deleted successfully');
+      
+      // Refresh the products list
+      await fetchProducts();
+      
     setShowDeleteConfirm(false);
     setSelectedItem(null);
+    } catch (error) {
+      console.error('❌ Failed to delete product:', error);
+      alert('Failed to delete product. Please try again.');
+    }
   };
 
-  const handleUpdateItem = (formData: any) => {
-    console.log('Updating item:', selectedItem?.id, formData);
-    // TODO: API call to update item
-    setShowEditItemModal(false);
-    setSelectedItem(null);
+  const handleUpdateItem = async (formData: NewProductData, imageFiles: File[]) => {
+    if (!selectedItem) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      // Update product data
+      const updatedProduct = await productService.updateProduct(selectedItem.id, formData);
+      
+      // If there are new images, upload them
+      if (imageFiles.length > 0) {
+        const existingImages = productImages[selectedItem.id] || [];
+        await ensureStorageAuth();
+        await productService.uploadProductImages(selectedItem.id, imageFiles, existingImages.length);
+      }
+
+      // Apply deletions for images flagged during edit (after update/upload)
+      if (removedImageIds.length > 0) {
+        const imagesToDelete = (productImages[selectedItem.id] || []).filter(img => removedImageIds.includes(img.id));
+        for (const img of imagesToDelete) {
+          await productService.deleteProductImage(img);
+        }
+      }
+      
+      console.log('✅ Product updated successfully');
+      
+      // Refresh the products list
+      await fetchProducts();
+      
+      setShowEditItemModal(false);
+      setShowUpdateConfirm(false);
+      setSelectedItem(null);
+      setRemovedImageIds([]);
+      resetEditForm();
+      
+    } catch (error) {
+      console.error('❌ Failed to update product:', error);
+      alert('Failed to update product. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -137,10 +378,10 @@ const AdminViewStocks = () => {
             className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
           >
             <option>All Categories</option>
-            <option>Power Tools</option>
-            <option>Hand Tools</option>
-            <option>Safety Equipment</option>
-            <option>Hardware</option>
+            <option>Seating</option>
+            <option>Storage</option>
+            <option>Tables</option>
+            <option>Beds</option>
           </select>
           <select 
             value={selectedStatus}
@@ -155,8 +396,16 @@ const AdminViewStocks = () => {
         </div>
 
         {/* Stock Items Table */}
-        {/* TODO: When backend is ready, implement pagination and sorting */}
         <div className="overflow-x-auto">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="text-dgray">Loading products...</div>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-dgray">No products found</div>
+            </div>
+          ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-sage-light">
@@ -171,14 +420,14 @@ const AdminViewStocks = () => {
               </tr>
             </thead>
             <tbody>
-              {stockItems.map((item) => (
+                {filteredProducts.map((item) => (
                 <tr key={item.id} className="border-b border-sage-light hover:bg-cream">
                   <td className="py-3 px-4 text-dgreen font-medium">{item.name}</td>
-                  <td className="py-3 px-4 text-dgray">{item.id}</td>
+                    <td className="py-3 px-4 text-dgray">{item.code || 'N/A'}</td>
                   <td className="py-3 px-4 text-dgray">{item.category}</td>
                   <td className="py-3 px-4 text-dgray">{item.supplier}</td>
                   <td className="py-3 px-4 text-dgray">{item.quantity}</td>
-                  <td className="py-3 px-4 text-dgreen font-medium">{item.price}</td>
+                    <td className="py-3 px-4 text-dgreen font-medium">₱{item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       item.status === 'In Stock' ? 'bg-green-100 text-green-800' :
@@ -193,12 +442,14 @@ const AdminViewStocks = () => {
                       <button 
                         onClick={() => handleEditItem(item)}
                         className="text-blue-600 hover:text-blue-800"
+                          title="Edit product"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleDeleteItem(item)}
                         className="text-red-600 hover:text-red-800"
+                          title="Delete product"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -208,18 +459,19 @@ const AdminViewStocks = () => {
               ))}
             </tbody>
           </table>
+          )}
         </div>
       </div>
 
       {/* Add New Item Modal */}
       {/* TODO: When backend is ready, implement actual form submission */}
       {showAddItemModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Add New Stock Item</h2>
               <button 
-                onClick={() => setShowAddItemModal(false)}
+                onClick={() => { setShowAddItemModal(false); resetAddForm(); }}
                 className="text-dgray hover:text-dgreen"
               >
                 <X className="w-6 h-6" />
@@ -233,14 +485,19 @@ const AdminViewStocks = () => {
                   <input
                     type="text"
                     placeholder="Enter product name"
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    value={newItemForm.name}
+                    onChange={(e) => setNewItemForm((p) => ({ ...p, name: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${formErrors.name ? 'border-red-400' : 'border-sage-light'}`}
                   />
+                  {formErrors.name && <p className="text-xs text-red-600 mt-1">{formErrors.name}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Product Code</label>
                   <input
                     type="text"
                     placeholder="Product code"
+                    value={newItemForm.code}
+                    onChange={(e) => setNewItemForm((p) => ({ ...p, code: e.target.value }))}
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   />
                 </div>
@@ -249,21 +506,29 @@ const AdminViewStocks = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Category *</label>
-                  <select className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen">
-                    <option>Select category</option>
-                    <option>Power Tools</option>
-                    <option>Hand Tools</option>
-                    <option>Safety Equipment</option>
-                    <option>Hardware</option>
+                  <select 
+                    value={newItemForm.category}
+                    onChange={(e) => setNewItemForm((p) => ({ ...p, category: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${formErrors.category ? 'border-red-400' : 'border-sage-light'}`}
+                  >
+                    <option value="">Select category</option>
+                    <option>Seating</option>
+                    <option>Storage</option>
+                    <option>Tables</option>
+                    <option>Beds</option>
                   </select>
+                  {formErrors.category && <p className="text-xs text-red-600 mt-1">{formErrors.category}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Supplier *</label>
                   <input
                     type="text"
                     placeholder="Enter supplier name"
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    value={newItemForm.supplier}
+                    onChange={(e) => setNewItemForm((p) => ({ ...p, supplier: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${formErrors.supplier ? 'border-red-400' : 'border-sage-light'}`}
                   />
+                  {formErrors.supplier && <p className="text-xs text-red-600 mt-1">{formErrors.supplier}</p>}
                 </div>
               </div>
 
@@ -274,16 +539,22 @@ const AdminViewStocks = () => {
                     type="number"
                     placeholder="0.00"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    value={newItemForm.price}
+                    onChange={(e) => setNewItemForm((p) => ({ ...p, price: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${formErrors.price ? 'border-red-400' : 'border-sage-light'}`}
                   />
+                  {formErrors.price && <p className="text-xs text-red-600 mt-1">{formErrors.price}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Quantity *</label>
                   <input
                     type="number"
                     placeholder="0"
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    value={newItemForm.quantity}
+                    onChange={(e) => setNewItemForm((p) => ({ ...p, quantity: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${formErrors.quantity ? 'border-red-400' : 'border-sage-light'}`}
                   />
+                  {formErrors.quantity && <p className="text-xs text-red-600 mt-1">{formErrors.quantity}</p>}
                 </div>
               </div>
 
@@ -292,8 +563,40 @@ const AdminViewStocks = () => {
                 <input
                   type="number"
                   placeholder="10"
-                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                  value={newItemForm.minStock}
+                  onChange={(e) => setNewItemForm((p) => ({ ...p, minStock: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${formErrors.minStock ? 'border-red-400' : 'border-sage-light'}`}
                 />
+                {formErrors.minStock && <p className="text-xs text-red-600 mt-1">{formErrors.minStock}</p>}
+              </div>
+
+              {/* Images upload */}
+              <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Product Images</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleImageChange(e.target.files)}
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sage-light file:text-dgreen"
+                />
+                {imagePreviews.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {imagePreviews.map((src, idx) => (
+                      <div key={idx} className="relative group">
+                        <img src={src} alt={`preview-${idx}`} className="w-full h-24 object-cover rounded border border-sage-light" />
+                        <button
+                          type="button"
+                          onClick={() => removeImageAtIndex(idx)}
+                          className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                          aria-label="Remove image"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -301,6 +604,8 @@ const AdminViewStocks = () => {
                 <textarea
                   rows={3}
                   placeholder="Product description..."
+                  value={newItemForm.description}
+                  onChange={(e) => setNewItemForm((p) => ({ ...p, description: e.target.value }))}
                   className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 ></textarea>
               </div>
@@ -308,7 +613,7 @@ const AdminViewStocks = () => {
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowAddItemModal(false)}
+                  onClick={() => { setShowAddItemModal(false); resetAddForm(); }}
                   className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
                 >
                   Cancel
@@ -317,7 +622,9 @@ const AdminViewStocks = () => {
                   type="submit"
                   onClick={(e) => {
                     e.preventDefault();
-                    handleAddItem({});
+                    if (validateAddForm()) {
+                      setShowAddConfirm(true);
+                    }
                   }}
                   className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
                 >
@@ -330,14 +637,13 @@ const AdminViewStocks = () => {
       )}
 
       {/* Edit Item Modal */}
-      {/* TODO: When backend is ready, implement actual form submission with pre-populated data */}
       {showEditItemModal && selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Edit Stock Item</h2>
               <button 
-                onClick={() => setShowEditItemModal(false)}
+                onClick={() => { setShowEditItemModal(false); resetEditForm(); }}
                 className="text-dgray hover:text-dgreen"
               >
                 <X className="w-6 h-6" />
@@ -350,16 +656,19 @@ const AdminViewStocks = () => {
                   <label className="block text-sm font-medium text-dgreen mb-1">Product Name *</label>
                   <input
                     type="text"
-                    defaultValue={selectedItem.name}
+                    value={editForm.name}
+                    onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
                     placeholder="Enter product name"
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${editFormErrors.name ? 'border-red-400' : 'border-sage-light'}`}
                   />
+                  {editFormErrors.name && <p className="text-xs text-red-600 mt-1">{editFormErrors.name}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Product Code</label>
                   <input
                     type="text"
-                    defaultValue={selectedItem.id}
+                    value={editForm.code}
+                    onChange={(e) => setEditForm((p) => ({ ...p, code: e.target.value }))}
                     placeholder="Product code"
                     className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                   />
@@ -370,24 +679,28 @@ const AdminViewStocks = () => {
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Category *</label>
                   <select 
-                    defaultValue={selectedItem.category}
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    value={editForm.category}
+                    onChange={(e) => setEditForm((p) => ({ ...p, category: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${editFormErrors.category ? 'border-red-400' : 'border-sage-light'}`}
                   >
-                    <option>Select category</option>
-                    <option>Power Tools</option>
-                    <option>Hand Tools</option>
-                    <option>Safety Equipment</option>
-                    <option>Hardware</option>
+                    <option value="">Select category</option>
+                    <option>Seating</option>
+                    <option>Storage</option>
+                    <option>Tables</option>
+                    <option>Beds</option>
                   </select>
+                  {editFormErrors.category && <p className="text-xs text-red-600 mt-1">{editFormErrors.category}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Supplier *</label>
                   <input
                     type="text"
-                    defaultValue={selectedItem.supplier}
+                    value={editForm.supplier}
+                    onChange={(e) => setEditForm((p) => ({ ...p, supplier: e.target.value }))}
                     placeholder="Enter supplier name"
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${editFormErrors.supplier ? 'border-red-400' : 'border-sage-light'}`}
                   />
+                  {editFormErrors.supplier && <p className="text-xs text-red-600 mt-1">{editFormErrors.supplier}</p>}
                 </div>
               </div>
 
@@ -396,27 +709,105 @@ const AdminViewStocks = () => {
                   <label className="block text-sm font-medium text-dgreen mb-1">Price (₱) *</label>
                   <input
                     type="number"
-                    defaultValue={selectedItem.price?.replace('₱', '').replace(',', '')}
+                    value={editForm.price}
+                    onChange={(e) => setEditForm((p) => ({ ...p, price: e.target.value }))}
                     placeholder="0.00"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${editFormErrors.price ? 'border-red-400' : 'border-sage-light'}`}
                   />
+                  {editFormErrors.price && <p className="text-xs text-red-600 mt-1">{editFormErrors.price}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-dgreen mb-1">Quantity *</label>
                   <input
                     type="number"
-                    defaultValue={selectedItem.quantity}
+                    value={editForm.quantity}
+                    onChange={(e) => setEditForm((p) => ({ ...p, quantity: e.target.value }))}
                     placeholder="0"
-                    className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${editFormErrors.quantity ? 'border-red-400' : 'border-sage-light'}`}
                   />
+                  {editFormErrors.quantity && <p className="text-xs text-red-600 mt-1">{editFormErrors.quantity}</p>}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Minimum Stock Level</label>
+                <input
+                  type="number"
+                  value={editForm.minStock}
+                  onChange={(e) => setEditForm((p) => ({ ...p, minStock: e.target.value }))}
+                  placeholder="10"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen ${editFormErrors.minStock ? 'border-red-400' : 'border-sage-light'}`}
+                />
+                {editFormErrors.minStock && <p className="text-xs text-red-600 mt-1">{editFormErrors.minStock}</p>}
+              </div>
+
+              {/* Existing Images Display */}
+              {productImages[selectedItem.id] && productImages[selectedItem.id].length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Current Images</label>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {productImages[selectedItem.id]
+                      .filter((img) => !removedImageIds.includes(img.id))
+                      .map((image, idx) => (
+                      <div key={image.id} className="relative group">
+                        <img 
+                          src={image.image_url} 
+                          alt={`Product ${idx + 1}`} 
+                          className="w-full h-24 object-cover rounded border border-sage-light" 
+                        />
+                        {image.is_primary && (
+                          <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1 rounded">Primary</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setRemovedImageIds((prev) => [...prev, image.id])}
+                          className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                          title="Remove image"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Images */}
+              <div>
+                <label className="block text-sm font-medium text-dgreen mb-1">Add New Images</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleEditImageChange(e.target.files)}
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sage-light file:text-dgreen"
+                />
+                {editImagePreviews.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {editImagePreviews.map((src, idx) => (
+                      <div key={idx} className="relative group">
+                        <img src={src} alt={`preview-${idx}`} className="w-full h-24 object-cover rounded border border-sage-light" />
+                        <button
+                          type="button"
+                          onClick={() => removeEditImageAtIndex(idx)}
+                          className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                          aria-label="Remove image"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-dgreen mb-1">Description</label>
                 <textarea
                   rows={3}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))}
                   placeholder="Product description..."
                   className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
                 ></textarea>
@@ -425,7 +816,7 @@ const AdminViewStocks = () => {
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowEditItemModal(false)}
+                  onClick={() => { setShowEditItemModal(false); resetEditForm(); }}
                   className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
                 >
                   Cancel
@@ -434,7 +825,9 @@ const AdminViewStocks = () => {
                   type="submit"
                   onClick={(e) => {
                     e.preventDefault();
-                    handleUpdateItem({});
+                    if (validateEditForm()) {
+                      setShowUpdateConfirm(true);
+                    }
                   }}
                   className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
                 >
@@ -448,7 +841,7 @@ const AdminViewStocks = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
             <div className="mb-6">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -472,6 +865,104 @@ const AdminViewStocks = () => {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Item Confirmation Modal */}
+      {showAddConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Plus className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-dgreen mb-2">Confirm Add Item</h3>
+              <p className="text-dgray">
+                Are you sure you want to add <span className="font-medium">{newItemForm.name || 'this item'}</span> to inventory?
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowAddConfirm(false)}
+                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  // Prepare payload for submission
+                  const payload: NewProductData = {
+                    name: newItemForm.name,
+                    code: newItemForm.code || undefined,
+                    category: newItemForm.category,
+                    supplier: newItemForm.supplier,
+                    price: Number(newItemForm.price),
+                    quantity: Number(newItemForm.quantity),
+                    min_stock: newItemForm.minStock ? Number(newItemForm.minStock) : 0,
+                    description: newItemForm.description || undefined
+                  };
+                  await handleAddItem(payload, newItemForm.images);
+                }}
+                disabled={isSubmitting}
+                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                  isSubmitting 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : 'bg-dgreen text-cream hover:bg-opacity-90'
+                }`}
+              >
+                {isSubmitting ? 'Creating...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Item Confirmation Modal */}
+      {showUpdateConfirm && selectedItem && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Edit className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-dgreen mb-2">Confirm Update Item</h3>
+              <p className="text-dgray">
+                Are you sure you want to update <span className="font-medium">{editForm.name || selectedItem.name}</span>?
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowUpdateConfirm(false)}
+                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  // Prepare payload for submission
+                  const payload: NewProductData = {
+                    name: editForm.name,
+                    code: editForm.code || undefined,
+                    category: editForm.category,
+                    supplier: editForm.supplier,
+                    price: Number(editForm.price),
+                    quantity: Number(editForm.quantity),
+                    min_stock: editForm.minStock ? Number(editForm.minStock) : 0,
+                    description: editForm.description || undefined
+                  };
+                  await handleUpdateItem(payload, editForm.images);
+                }}
+                disabled={isUpdating}
+                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                  isUpdating 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : 'bg-dgreen text-cream hover:bg-opacity-90'
+                }`}
+              >
+                {isUpdating ? 'Updating...' : 'Confirm'}
               </button>
             </div>
           </div>
