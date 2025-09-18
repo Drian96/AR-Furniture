@@ -34,10 +34,23 @@ const UserProfile = () => {
       
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-6">
-          <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-          <div className="flex-1 bg-white rounded-lg p-6 mb-11">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
+        {/* Mobile Layout - Sidebar on top, content below */}
+        <div className="lg:hidden ">
+          <div className="mb-6">
+            <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+          </div>
+          <div className="bg-white rounded-lg p-4 mb-11 shadow-dgreen shadow-xl">
+            {renderContent()}
+          </div>
+        </div>
+
+        {/* Desktop Layout - Sidebar left, content right */}
+        <div className="hidden lg:flex gap-6">
+          <div className="w-64">
+            <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+          </div>
+          <div className="flex-1 bg-white rounded-lg p-6 mb-11 shadow-dgreen shadow-xl">
             {renderContent()}
           </div>
         </div>

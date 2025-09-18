@@ -1,45 +1,34 @@
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2 } from 'lucide-react';
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  isNew: boolean;
-  description: string;
-  inStock: number;
-}
+import { productService, type Product as DbProduct, type ProductImage } from '../../services/supabase';
+import { useCart } from '../../contexts/CartContext';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [product, setProduct] = useState<DbProduct | null>(null);
+  const [images, setImages] = useState<ProductImage[]>([]);
+  const { addItem } = useCart();
 
-  // Mock product data - in real app this would come from API
-  const product: Product = {
-    id: parseInt(id || '1'),
-    name: "Modern Oak Dining Table",
-    price: 1299,
-    image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    category: "Tables",
-    isNew: true,
-    description: "Crafted from premium oak wood, this modern dining table combines elegance with functionality. Perfect for family gatherings and dinner parties. Features a durable finish that resists scratches and stains.",
-    inStock: 15
-  };
+  useEffect(() => {
+    const load = async () => {
+      if (!id) return;
+      const p = await productService.getProductById(id);
+      if (p) {
+        setProduct(p);
+        setImages(await productService.getProductImages(p.id));
+      }
+    };
+    load();
+  }, [id]);
 
-  const productImages = [
-    product.image,
-    product.image,
-    product.image,
-    product.image
-  ];
+  const productImages = useMemo(() => images.map(i => i.image_url), [images]);
 
   const handleQuantityChange = (action: 'increase' | 'decrease') => {
-    if (action === 'increase' && quantity < product.inStock) {
+    if (action === 'increase' && quantity < (product?.quantity ?? 0)) {
       setQuantity(quantity + 1);
     } else if (action === 'decrease' && quantity > 1) {
       setQuantity(quantity - 1);
@@ -47,11 +36,13 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    console.log(`Added ${quantity} ${product.name} to cart`);
-    // TODO: Implement add to cart functionality
+    if (!product) return;
+    const firstImage = images[0]?.image_url;
+    addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, quantity);
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
     console.log(`Buying ${quantity} ${product.name}`);
     // TODO: Implement buy now functionality
   };
@@ -68,18 +59,20 @@ const ProductDetail = () => {
           Back to Products
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
             <div className="aspect-square overflow-hidden rounded-2xl bg-white shadow-lg">
-              <img 
-                src={productImages[selectedImage]}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
+                  {product ? (
+                    <img 
+                      src={productImages[selectedImage]}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : null}
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {productImages.map((image, index) => (
+                  {productImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -89,7 +82,7 @@ const ProductDetail = () => {
                 >
                   <img 
                     src={image}
-                    alt={`${product.name} ${index + 1}`}
+                        alt={`${product?.name ?? 'product'} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -100,25 +93,26 @@ const ProductDetail = () => {
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              {product.isNew && (
+                  {/* New badge could be based on created_at */}
+                  {false && (
                 <span className="inline-block bg-dgreen text-cream px-3 py-1 rounded-full text-sm font-medium mb-4">
                   New Arrival
                 </span>
               )}
-              <h1 className="text-3xl font-bold text-dgreen mb-2">{product.name}</h1>
-              <p className="text-lgray font-medium">{product.category}</p>
+                  <h1 className="text-3xl font-bold text-dgreen mb-2">{product?.name || ''}</h1>
+                  <p className="text-lgray font-medium">{product?.category || ''}</p>
             </div>
 
-            <div className="text-4xl font-bold text-dgreen">
-              ${product.price.toLocaleString()}
-            </div>
+                <div className="text-4xl font-bold text-dgreen">
+                  {product ? `₱${product.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : ''}
+                </div>
 
             <p className="text-dgray leading-relaxed">
-              {product.description}
+                  {product?.description || ''}
             </p>
 
             <div className="flex items-center space-x-4">
-              <span className="text-dgray">In Stock: {product.inStock} items</span>
+                  <span className="text-dgray">In Stock: {product?.quantity ?? 0} items</span>
             </div>
 
             {/* Quantity Selector */}

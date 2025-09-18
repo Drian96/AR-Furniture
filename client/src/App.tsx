@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
@@ -7,6 +8,7 @@ import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Products from './pages/Product';
 import ProductDetailPage from './pages/ProductDetails';
+import CartPage from './pages/Cart';
 import UserProfile from './pages/UserProfile';
 import Admin from './pages/AdminDashboard';
 import AdminProfile from './pages/AdminProfile';
@@ -15,12 +17,14 @@ import AdminSystemSettingsPage from './pages/AdminSystemSettings';
 const App = () => {
   return (
     <AuthProvider>
-      <Routes>
+      <CartProvider>
+        <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/products" element={<Products />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
+        <Route path="/cart" element={<CartPage />} />
 
         {/* Customer protected routes */}
         <Route element={<ProtectedRoute allowedRoles={["customer", "admin", "manager", "staff"]} />}> 
@@ -40,7 +44,8 @@ const App = () => {
 
         <Route path="/logout" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
+      </CartProvider>
     </AuthProvider>
   );
 }

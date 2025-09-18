@@ -1,16 +1,8 @@
 
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import sofa from '../../assets/sofa.jpg'
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  isNew: boolean;
-}
+import { productService, type Product as DbProduct, type ProductImage } from '../../services/supabase';
+import { useCart } from '../../contexts/CartContext';
 
 interface ProductGridProps {
   selectedCategory: string;
@@ -18,77 +10,30 @@ interface ProductGridProps {
 }
 
 const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
-  const products: Product[] = [
-    {
-      id: 1,
-      name: "Modern Oak Dining Table",
-      price: 1299,
-      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      category: "Tables",
-      isNew: true
-    },
-    {
-      id: 2,
-      name: "Comfort Lounge Chair",
-      price: 899,
-      image: sofa,
-      category: "Seating",
-      isNew: false
-    },
-    {
-      id: 3,
-      name: "Minimalist Bookshelf",
-      price: 649,
-      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      category: "Storage",
-      isNew: true
-    },
-    {
-      id: 4,
-      name: "Elegant Coffee Table",
-      price: 449,
-      image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      category: "Tables",
-      isNew: false
-    },
-    {
-      id: 5,
-      name: "King Size Platform Bed",
-      price: 1599,
-      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      category: "Beds",
-      isNew: true
-    },
-    {
-      id: 6,
-      name: "Velvet Armchair",
-      price: 799,
-      image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      category: "Seating",
-      isNew: false
-    },
-    {
-      id: 7,
-      name: "Wooden Storage Cabinet",
-      price: 599,
-      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      category: "Storage",
-      isNew: false
-    },
-    {
-      id: 8,
-      name: "Queen Size Upholstered Bed",
-      price: 1299,
-      image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      category: "Beds",
-      isNew: true
-    }
-  ];
+  const [items, setItems] = useState<DbProduct[]>([]);
+  const [imagesByProduct, setImagesByProduct] = useState<Record<string, ProductImage[]>>({});
+  const [loading, setLoading] = useState(true);
+  const { addItem } = useCart();
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const products = await productService.getProducts();
+      setItems(products);
+      const map: Record<string, ProductImage[]> = {};
+      for (const p of products) {
+        map[p.id] = await productService.getProductImages(p.id);
+      }
+      setImagesByProduct(map);
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = selectedCategory === 'All' 
-      ? products 
-      : products.filter(product => product.category === selectedCategory);
+      ? items 
+      : items.filter(product => product.category === selectedCategory);
 
     switch (sortBy) {
       case 'Lowest Price':
@@ -96,31 +41,33 @@ const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
       case 'Highest Price':
         return [...filtered].sort((a, b) => b.price - a.price);
       case 'Newest':
-        return [...filtered].sort((a, b) => Number(b.isNew) - Number(a.isNew));
+        return filtered; // no created_at here in component; could sort by created_at if needed
       default:
         return filtered;
     }
-  }, [selectedCategory, sortBy]);
+  }, [items, selectedCategory, sortBy]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-      {filteredAndSortedProducts.map((product) => (
+      {loading ? (
+        <div className="col-span-full text-center text-dgray">Loading...</div>
+      ) : filteredAndSortedProducts.map((product) => (
         <div key={product.id} className="group cursor-pointer">
           <Link to={`/product/${product.id}`}>
             <div className="relative overflow-hidden rounded-2xl shadow-lg bg-white">
-              <img 
-                src={product.image}
-                alt={product.name}
-                className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
-              />
+              {(() => {
+                const imgs = imagesByProduct[product.id];
+                const src = imgs && imgs.length > 0 ? imgs[0].image_url : '';
+                return (
+                  <img 
+                    src={src}
+                    alt={product.name}
+                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                );
+              })()}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-opacity-20 transition-all duration-300"></div>
-              {product.isNew && (
-                <div className="absolute top-4 left-4">
-                  <span className="bg-dgreen text-cream px-3 py-1 rounded-full text-sm font-medium">
-                    New
-                  </span>
-                </div>
-              )}
+              {/* could show badges here based on status */}
               <div className="absolute top-4 right-4">
                 <span className="bg-lgreen text-cream px-3 py-1 rounded-full text-sm font-medium">
                   {product.category}
@@ -133,12 +80,13 @@ const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
                 {product.name}
               </h3>
               <p className="text-2xl font-bold text-dgreen">
-                ${product.price.toLocaleString()}
+                ₱{product.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
               </p>
               <button 
                 onClick={(e) => {
                   e.preventDefault();
-                  console.log(`Added ${product.name} to cart`);
+                  const firstImage = imagesByProduct[product.id]?.[0]?.image_url;
+                  addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, 1);
                 }}
                 className="w-full mt-4 bg-dgreen text-cream px-6 py-3 rounded-lg font-medium hover:bg-lgreen transition-all duration-300"
               >

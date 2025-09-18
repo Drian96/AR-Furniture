@@ -26,21 +26,20 @@ const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
   const displayEmail = user?.email || '';
 
   return (
-    <div className="w-64 bg-lgreen rounded-lg p-6 h-fit">
-      {/* User Profile Section */}
-      {/* TODO: When backend is ready, display actual user avatar from database */}
-      <div className="text-center mb-6">
-        <div className="w-20 h-20 bg-sage-medium rounded-full mx-auto mb-3 flex items-center justify-center">
-          <User className="w-10 h-10 text-dgreen" />
+    <div className="bg-lgreen rounded-lg p-4 lg:p-6 h-fit">
+      {/* User Profile Section - Responsive */}
+      <div className="text-center mb-4 lg:mb-6">
+        <div className="w-16 h-16 lg:w-20 lg:h-20 bg-sage-medium rounded-full mx-auto mb-2 lg:mb-3 flex items-center justify-center">
+          <User className="w-8 h-8 lg:w-10 lg:h-10 text-dgreen" />
         </div>
         {/* User Name - from auth context */}
-        <h3 className="text-dgreen font-semibold">{displayName}</h3>
+        <h3 className="text-dgreen font-semibold text-sm lg:text-base">{displayName}</h3>
         {/* User Email - from auth context */}
-        <p className="text-dgray text-sm">{displayEmail}</p>
+        <p className="text-dgray text-xs lg:text-sm">{displayEmail}</p>
       </div>
       
-      {/* Navigation Menu */}
-      <nav className="space-y-2">
+      {/* Navigation Menu - Mobile: horizontal, Desktop: vertical */}
+      <nav className="flex justify-center lg:block space-x-2 lg:space-x-0 lg:space-y-2">
         {sidebarItems.map((item) => {
           const Icon = item.icon;
           // Check if current item is active
@@ -51,18 +50,20 @@ const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
               key={item.id}
               onClick={() => setActiveSection(item.id)}
               className={`
-                w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left 
-                transition-all duration-200 ease-in-out
+                flex items-center justify-center lg:justify-start
+                w-12 h-12 lg:w-full lg:h-auto lg:space-x-3 lg:px-4 lg:py-3
+                rounded-lg text-left transition-all duration-200 ease-in-out
                 ${isActive 
                   ? 'bg-dgreen text-cream shadow-md' // Active state: dark green background with cream text
                   : 'text-dgreen hover:bg-sage-medium hover:shadow-sm' // Inactive state: hover effects
                 }
               `}
+              title={item.label} // Tooltip for mobile accessibility
             >
-              {/* Icon with consistent sizing */}
-              <Icon className={`w-5 h-5 ${isActive ? 'text-cream' : 'text-dgreen'}`} />
-              {/* Label text */}
-              <span className="text-sm font-medium">{item.label}</span>
+              {/* Icon with responsive sizing */}
+              <Icon className={`w-6 h-6 lg:w-5 lg:h-5 ${isActive ? 'text-cream' : 'text-dgreen'}`} />
+              {/* Label text - hidden on mobile, visible on desktop */}
+              <span className="hidden lg:block text-sm font-medium">{item.label}</span>
             </button>
           );
         })}
