@@ -453,3 +453,495 @@ export const cartService = {
     if (error) throw new Error(`Failed to clear cart: ${error.message}`);
   }
 };
+
+// =============================
+// Order types and service
+// =============================
+export interface Order {
+  id: number;
+  user_id: number;
+  order_number: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postal_code: string;
+  notes?: string;
+  payment_method: string;
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'return_refund';
+  total_amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderItem {
+  id: number;
+  order_id: number;
+  product_id: string; // Changed to string (UUID)
+  quantity: number;
+  price: number;
+  created_at: string;
+}
+
+export interface ProductReview {
+  id: string;
+  order_id: number;
+  product_id: string;
+  user_id: number;
+  rating: number;
+  comment?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductReviewStats {
+  product_id: string;
+  total_reviews: number;
+  average_rating: number;
+  five_star_count: number;
+  four_star_count: number;
+  three_star_count: number;
+  two_star_count: number;
+  one_star_count: number;
+}
+
+export interface CreateOrderData {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postal_code: string;
+  notes?: string;
+  payment_method: string;
+  total_amount: number;
+  items: {
+    product_id: string; // Changed to string (UUID)
+    quantity: number;
+    price: number;
+  }[];
+}
+
+export const orderService = {
+  // Create a new order with items
+  async createOrder(orderData: CreateOrderData): Promise<Order> {
+    try {
+      console.log('📦 Creating order:', orderData);
+      
+      // Create the order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert([{
+          user_id: orderData.user_id,
+          first_name: orderData.first_name,
+          last_name: orderData.last_name,
+          email: orderData.email,
+          phone: orderData.phone,
+          address: orderData.address,
+          city: orderData.city,
+          postal_code: orderData.postal_code,
+          notes: orderData.notes,
+          payment_method: orderData.payment_method,
+          total_amount: orderData.total_amount
+        }])
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error('❌ Failed to create order:', orderError);
+        throw new Error(`Failed to create order: ${orderError.message}`);
+      }
+
+      console.log('✅ Order created:', order.id);
+
+      // Create order items
+      const orderItems = orderData.items.map(item => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) {
+        console.error('❌ Failed to create order items:', itemsError);
+        // Try to clean up the order if items creation failed
+        await supabase.from('orders').delete().eq('id', order.id);
+        throw new Error(`Failed to create order items: ${itemsError.message}`);
+      }
+
+      console.log('✅ Order items created successfully');
+      return order as Order;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
+  },
+
+  // Get orders for a user
+  async getUserOrders(userId: number): Promise<Order[]> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Failed to fetch orders: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+      throw error;
+    }
+  },
+
+  // Get order with items
+  async getOrderWithItems(orderId: number): Promise<{ order: Order; items: OrderItem[] }> {
+    try {
+      // Get order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError) {
+        throw new Error(`Failed to fetch order: ${orderError.message}`);
+      }
+
+      // Get order items
+      const { data: items, error: itemsError } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', orderId);
+
+      if (itemsError) {
+        throw new Error(`Failed to fetch order items: ${itemsError.message}`);
+      }
+
+      return {
+        order: order as Order,
+        items: items || []
+      };
+    } catch (error) {
+      console.error('Error fetching order with items:', error);
+      throw error;
+    }
+  },
+
+  // Update order status
+  async updateOrderStatus(orderId: number, status: Order['status']): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', orderId);
+
+      if (error) {
+        throw new Error(`Failed to update order status: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
+  },
+
+  // Get all orders (for admin)
+  async getAllOrders(): Promise<Order[]> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Failed to fetch orders: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all orders:', error);
+      throw error;
+    }
+  },
+
+  // Get order with items and product details (for admin)
+  async getOrderWithDetails(orderId: number): Promise<{
+    order: Order;
+    items: (OrderItem & { product_name: string; product_image?: string })[];
+  }> {
+    try {
+      // Get order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError) {
+        throw new Error(`Failed to fetch order: ${orderError.message}`);
+      }
+
+      // Get order items with product details
+      const { data: items, error: itemsError } = await supabase
+        .from('order_items')
+        .select(`
+          *,
+          products!inner(name)
+        `)
+        .eq('order_id', orderId);
+
+      if (itemsError) {
+        throw new Error(`Failed to fetch order items: ${itemsError.message}`);
+      }
+
+      // Get product images for each product
+      const itemsWithDetails = await Promise.all(
+        items.map(async (item) => {
+          const product = item.products as any;
+          
+          // Get primary image for this product
+          const { data: productImages } = await supabase
+            .from('product_images')
+            .select('image_url')
+            .eq('product_id', item.product_id)
+            .eq('is_primary', true)
+            .single();
+          
+          return {
+            ...item,
+            product_name: product?.name || 'Unknown Product',
+            product_image: productImages?.image_url || null
+          };
+        })
+      );
+
+      return {
+        order: order as Order,
+        items: itemsWithDetails
+      };
+    } catch (error) {
+      console.error('Error fetching order with details:', error);
+      throw error;
+    }
+  }
+};
+
+// Review service for handling product reviews and ratings
+export const reviewService = {
+  // Create a new product review
+  async createReview(reviewData: {
+    order_id: number;
+    product_id: string;
+    user_id: number;
+    rating: number;
+    comment?: string;
+  }): Promise<ProductReview> {
+    try {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .insert([{ ...reviewData, status: 'pending' }])
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to create review: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error creating review:', error);
+      throw error;
+    }
+  },
+
+  // Get reviews for a specific product
+  async getProductReviews(productId: string): Promise<ProductReview[]> {
+    try {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .select(`
+          *,
+          users!inner(first_name, last_name)
+        `)
+        .eq('product_id', productId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Failed to fetch product reviews: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching product reviews:', error);
+      throw error;
+    }
+  },
+
+  // Get review statistics for a product
+  async getProductReviewStats(productId: string): Promise<ProductReviewStats | null> {
+    try {
+      const { data, error } = await supabase
+        .from('product_review_stats')
+        .select('*')
+        .eq('product_id', productId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No reviews found
+          return null;
+        }
+        throw new Error(`Failed to fetch review stats: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching review stats:', error);
+      throw error;
+    }
+  },
+
+  // Check if user has already reviewed a product from a specific order
+  async hasUserReviewedProduct(orderId: number, productId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .select('id')
+        .eq('order_id', orderId)
+        .eq('product_id', productId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No review found
+          return false;
+        }
+        throw new Error(`Failed to check review: ${error.message}`);
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Error checking review:', error);
+      return false;
+    }
+  },
+
+  // Update an existing review
+  async updateReview(reviewId: string, updates: {
+    rating?: number;
+    comment?: string;
+  }): Promise<ProductReview> {
+    try {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .update(updates)
+        .eq('id', reviewId)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to update review: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error updating review:', error);
+      throw error;
+    }
+  },
+
+  // Delete a review
+  async deleteReview(reviewId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('product_reviews')
+        .delete()
+        .eq('id', reviewId);
+
+      if (error) {
+        throw new Error(`Failed to delete review: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      throw error;
+    }
+  },
+
+  // Get all reviews for admin (with user and product info)
+  async getAllReviews(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .select(`
+          *,
+          users!inner(first_name, last_name),
+          products!inner(name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Failed to fetch all reviews: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all reviews:', error);
+      throw error;
+    }
+  },
+
+  // Approve a review
+  async approveReview(reviewId: string): Promise<ProductReview> {
+    try {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .update({ status: 'approved' })
+        .eq('id', reviewId)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to approve review: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error approving review:', error);
+      throw error;
+    }
+  },
+
+  // Reject a review
+  async rejectReview(reviewId: string): Promise<ProductReview> {
+    try {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .update({ status: 'rejected' })
+        .eq('id', reviewId)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to reject review: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error rejecting review:', error);
+      throw error;
+    }
+  }
+};

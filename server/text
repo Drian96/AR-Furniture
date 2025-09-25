@@ -127,3 +127,168 @@ from information_schema.columns
 where table_name in ('carts', 'cart_items') 
 and table_schema = 'public'
 order by table_name, ordinal_position;
+
+
+-- Create orders table
+CREATE TABLE IF NOT EXISTS orders (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    order_number VARCHAR(50) UNIQUE NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    address TEXT NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    notes TEXT,
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'cash_on_delivery',
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    total_amount DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create order_items table with correct data types
+CREATE TABLE IF NOT EXISTS order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,  -- Changed to UUID
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+
+-- Create function to generate order number
+CREATE OR REPLACE FUNCTION generate_order_number()
+RETURNS TEXT AS $$
+DECLARE
+    new_number TEXT;
+    counter INTEGER;
+BEGIN
+    new_number := TO_CHAR(NOW(), 'YYYYMMDD');
+    SELECT COUNT(*) + 1 INTO counter 
+    FROM orders 
+    WHERE DATE(created_at) = CURRENT_DATE;
+    new_number := 'ORD-' || new_number || '-' || LPAD(counter::TEXT, 3, '0');
+    RETURN new_number;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to automatically set order_number
+CREATE OR REPLACE FUNCTION set_order_number()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.order_number IS NULL OR NEW.order_number = '' THEN
+        NEW.order_number := generate_order_number();
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_set_order_number
+    BEFORE INSERT ON orders
+    FOR EACH ROW
+    EXECUTE FUNCTION set_order_number();
+
+-- Create trigger to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_orders_updated_at
+    BEFORE UPDATE ON orders
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Grant necessary permissions
+GRANT ALL ON orders TO authenticated;
+GRANT ALL ON order_items TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE orders_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE order_items_id_seq TO authenticated;
+
+
+-- Create product_reviews table for storing customer ratings and reviews
+CREATE TABLE IF NOT EXISTS product_reviews (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index for faster queries
+CREATE INDEX IF NOT EXISTS idx_product_reviews_product_id ON product_reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_reviews_user_id ON product_reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_product_reviews_order_id ON product_reviews(order_id);
+
+-- Create a view for product review statistics
+CREATE OR REPLACE VIEW product_review_stats AS
+SELECT 
+    product_id,
+    COUNT(*) as total_reviews,
+    AVG(rating) as average_rating,
+    COUNT(CASE WHEN rating = 5 THEN 1 END) as five_star_count,
+    COUNT(CASE WHEN rating = 4 THEN 1 END) as four_star_count,
+    COUNT(CASE WHEN rating = 3 THEN 1 END) as three_star_count,
+    COUNT(CASE WHEN rating = 2 THEN 1 END) as two_star_count,
+    COUNT(CASE WHEN rating = 1 THEN 1 END) as one_star_count
+FROM product_reviews
+GROUP BY product_id;
+
+-- Enable Row Level Security
+ALTER TABLE product_reviews ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to read all reviews
+CREATE POLICY "Anyone can read reviews" ON product_reviews
+    FOR SELECT USING (true);
+
+-- Allow users to create reviews for their own orders
+CREATE POLICY "Users can create reviews for their orders" ON product_reviews
+    FOR INSERT WITH CHECK (true);
+
+-- Allow users to update their own reviews  
+CREATE POLICY "Users can update their own reviews" ON product_reviews
+    FOR UPDATE USING (true);
+
+-- Allow users to delete their own reviews
+CREATE POLICY "Users can delete their own reviews" ON product_reviews
+    FOR DELETE USING (true);
+-- Add status column to product_reviews table
+ALTER TABLE product_reviews 
+ADD COLUMN status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected'));
+
+-- Create index for better performance on status filtering
+CREATE INDEX IF NOT EXISTS idx_product_reviews_status ON product_reviews(status);
+
+-- Update existing reviews to be approved (since they're already visible)
+UPDATE product_reviews SET status = 'approved' WHERE status = 'pending';
+
+-- Update the product_review_stats view to only include approved reviews
+CREATE OR REPLACE VIEW product_review_stats AS
+SELECT 
+    product_id,
+    COUNT(*) as total_reviews,
+    AVG(rating) as average_rating,
+    COUNT(CASE WHEN rating = 5 THEN 1 END) as five_star_count,
+    COUNT(CASE WHEN rating = 4 THEN 1 END) as four_star_count,
+    COUNT(CASE WHEN rating = 3 THEN 1 END) as three_star_count,
+    COUNT(CASE WHEN rating = 2 THEN 1 END) as two_star_count,
+    COUNT(CASE WHEN rating = 1 THEN 1 END) as one_star_count
+FROM product_reviews
+WHERE status = 'approved'
+GROUP BY product_id;

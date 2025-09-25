@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import Header from '../shared/Header';
 
 const CartPage = () => {
   const { items, totalPrice, updateQuantity, removeItem, clear } = useCart();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-cream">
@@ -45,7 +46,12 @@ const CartPage = () => {
                 <span className="text-dgray">Subtotal</span>
                 <span className="text-dgreen font-semibold">₱{totalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
               </div>
-              <button className="w-full bg-dgreen text-cream px-6 py-3 rounded-lg hover:bg-lgreen mb-3">Checkout</button>
+              <button 
+                onClick={() => navigate('/checkout')}
+                className="w-full bg-dgreen text-cream px-6 py-3 rounded-lg hover:bg-lgreen mb-3"
+              >
+                Proceed to Checkout
+              </button>
               <button onClick={clear} className="w-full border border-sage-light text-dgray px-6 py-3 rounded-lg hover:bg-sage-light">Clear Cart</button>
             </div>
           </div>

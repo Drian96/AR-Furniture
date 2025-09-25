@@ -9,6 +9,7 @@ import NotFound from './pages/NotFound';
 import Products from './pages/Product';
 import ProductDetailPage from './pages/ProductDetails';
 import CartPage from './pages/Cart';
+import Checkout from './pages/Checkout';
 import UserProfile from './pages/UserProfile';
 import Admin from './pages/AdminDashboard';
 import AdminProfile from './pages/AdminProfile';
@@ -25,6 +26,7 @@ const App = () => {
         <Route path="/products" element={<Products />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<Checkout />} />
 
         {/* Customer protected routes */}
         <Route element={<ProtectedRoute allowedRoles={["customer", "admin", "manager", "staff"]} />}> 
