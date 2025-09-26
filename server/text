@@ -292,3 +292,31 @@ SELECT
 FROM product_reviews
 WHERE status = 'approved'
 GROUP BY product_id;
+
+-- 1) Audit logs table
+create table if not exists public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_email text not null,
+  action text not null,
+  category text not null check (category in ('Authentication','User Management','Inventory','Orders')),
+  description text not null,
+  ip_address text,
+  user_agent text,
+  success boolean not null default true,
+  details jsonb,
+  created_at timestamp with time zone not null default now()
+);
+
+-- Indexes to speed up filters/search
+create index if not exists idx_audit_logs_created_at on public.audit_logs (created_at desc);
+create index if not exists idx_audit_logs_category on public.audit_logs (category);
+create index if not exists idx_audit_logs_user_email on public.audit_logs (user_email);
+create index if not exists idx_audit_logs_success on public.audit_logs (success);
+
+-- 2) Optional: if your orders/status values differ, adjust the server queries accordingly.
+
+-- 3) Ensure RLS fits your needs (example: allow staff read, admin insert)
+-- Enable RLS if you use it
+-- alter table public.audit_logs enable row level security;
+-- create policy \"staff_read_logs\" on public.audit_logs for select using (true);
+-- create policy \"admin_insert_logs\" on public.audit_logs for insert with check (true);

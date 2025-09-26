@@ -404,6 +404,68 @@ export default {
 }; 
 
 // =========================
+// Admin Analytics & Audit API
+// =========================
+export interface AdminDashboardResponse {
+  stats: {
+    totalSales: number;
+    totalOrders: number;
+    totalCustomers: number;
+    productsInStock: number;
+  };
+  recentOrders: Array<{ id: string; customer: string; amount: number; status: string }>;
+  topProducts: Array<{ name: string; price: number; sales: number }>;
+  salesSeries: Array<{ month: string; sales: number }>;
+}
+
+export const getAdminDashboard = async (): Promise<AdminDashboardResponse> => {
+  const response = await apiRequest<AdminDashboardResponse>('/admin/dashboard');
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to load dashboard');
+};
+
+export interface AdminReportsResponse {
+  totalRevenue: number;
+  totalOrders: number;
+  avgOrderValue: number;
+  conversionRate: number | null;
+  targetAchievement: number | null;
+  avgOrderSize: number | null;
+  category: Array<{ category: string; percentage: number }>;
+  topProducts: Array<{ name: string; sales: number; revenue: string }>;
+}
+
+export const getAdminReports = async (period: 'day' | 'week' | 'month' | 'year' = 'month'): Promise<AdminReportsResponse> => {
+  const response = await apiRequest<AdminReportsResponse>(`/admin/reports?period=${period}`);
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to load reports');
+};
+
+export interface AuditLogItem {
+  id: string;
+  timestamp: string;
+  user: string;
+  action: string;
+  category: string;
+  description: string;
+  ipAddress: string;
+  userAgent: string;
+  success: boolean;
+  details: any;
+}
+
+export const getAuditLogs = async (params: { q?: string; category?: string; period?: 'day' | 'week' | 'month' | 'year' } = {}): Promise<AuditLogItem[]> => {
+  const query = new URLSearchParams();
+  if (params.q) query.set('q', params.q);
+  if (params.category) query.set('category', params.category);
+  if (params.period) query.set('period', params.period);
+  const qs = query.toString();
+  const response = await apiRequest<AuditLogItem[]>(`/admin/audit-logs${qs ? `?${qs}` : ''}`);
+  if (response.success && response.data) return response.data as unknown as AuditLogItem[];
+  throw new Error(response.message || 'Failed to load audit logs');
+};
+
+// =========================
 // Admin Users API
 // =========================
 export const adminListUsers = async (): Promise<AdminListUsersResponse> => {

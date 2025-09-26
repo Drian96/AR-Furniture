@@ -111,6 +111,10 @@ const API_PREFIX = '/api/v1';
 // All auth routes will be prefixed with /api/v1/auth
 app.use(`${API_PREFIX}/auth`, authRoutes);
 
+// Admin analytics and audit routes
+const adminRoutes = require('./routes/admin');
+app.use(`${API_PREFIX}/admin`, adminRoutes);
+
 // User management routes - admin only
 app.use(`${API_PREFIX}/users`, userRoutes);
 

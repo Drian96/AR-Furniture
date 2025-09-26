@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Filter, Calendar, User, Activity, Shield, Eye, X } from 'lucide-react';
+import { getAuditLogs, AuditLogItem } from '../../services/api';
 
 // Audit logs component for admin
 // TODO: When backend is connected, fetch real audit logs from your Express API
@@ -9,81 +10,27 @@ const AdminAuditLogs = () => {
   const [selectedDateRange, setSelectedDateRange] = useState('Today');
   const [selectedLog, setSelectedLog] = useState<any>(null);
 
-  // TODO: Replace with actual audit logs data from backend API
-  const auditLogs = [
-    {
-      id: "LOG001",
-      timestamp: "2024-01-15 10:30:25",
-      user: "admin@shop.com",
-      action: "User Login",
-      category: "Authentication",
-      description: "Admin user logged into the system",
-      ipAddress: "192.168.1.100",
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      success: true,
-      details: { loginMethod: "password", sessionId: "sess_abc123" }
-    },
-    {
-      id: "LOG002",
-      timestamp: "2024-01-15 10:28:15",
-      user: "admin@shop.com", 
-      action: "Product Created",
-      category: "Inventory",
-      description: "New product added: Power Drill Kit KJ-2000",
-      ipAddress: "192.168.1.100",
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      success: true,
-      details: { productId: "PROD123", price: "₱3,199.99", category: "Power Tools" }
-    },
-    {
-      id: "LOG003",
-      timestamp: "2024-01-15 10:25:45",
-      user: "staff@shop.com",
-      action: "Order Updated", 
-      category: "Orders",
-      description: "Order status changed from Pending to Processing",
-      ipAddress: "192.168.1.105",
-      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      success: true,
-      details: { orderId: "ORD-2441", previousStatus: "Pending", newStatus: "Processing" }
-    },
-    {
-      id: "LOG004",
-      timestamp: "2024-01-15 10:20:12",
-      user: "john@example.com",
-      action: "Failed Login",
-      category: "Authentication",
-      description: "Failed login attempt - invalid password",
-      ipAddress: "203.177.25.45",
-      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
-      success: false,
-      details: { reason: "invalid_password", attempts: 3 }
-    },
-    {
-      id: "LOG005",
-      timestamp: "2024-01-15 10:15:33",
-      user: "admin@shop.com",
-      action: "User Account Created",
-      category: "User Management", 
-      description: "New user account created for staff member",
-      ipAddress: "192.168.1.100",
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      success: true,
-      details: { newUserId: "USR004", role: "Staff", email: "newstaff@shop.com" }
-    },
-    {
-      id: "LOG006",
-      timestamp: "2024-01-15 10:10:58",
-      user: "manager@shop.com",
-      action: "Stock Updated",
-      category: "Inventory",
-      description: "Stock quantity updated for Hammer Set Pro",
-      ipAddress: "192.168.1.102",
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      success: true,
-      details: { productId: "HAS9900", previousStock: 12, newStock: 8 }
+  // load logs from API
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadLogs = async () => {
+    try {
+      setLoading(true);
+      const logs = await getAuditLogs({ q: searchTerm, category: selectedFilter, period: selectedDateRange === 'Today' ? 'day' : selectedDateRange === 'Last 7 days' ? 'week' : selectedDateRange === 'Last 30 days' ? 'month' : 'year' });
+      setAuditLogs(logs);
+    } catch (e: any) {
+      setError(e.message || 'Failed to load audit logs');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    loadLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFilter, selectedDateRange]);
 
   // Get icon for activity category
   const getCategoryIcon = (category: string) => {
@@ -215,7 +162,6 @@ const AdminAuditLogs = () => {
         </div>
 
         {/* Audit Logs Table */}
-        {/* TODO: When backend is ready, implement pagination and real-time updates */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -263,7 +209,6 @@ const AdminAuditLogs = () => {
       </div>
 
       {/* Log Detail Modal */}
-      {/* TODO: When backend is ready, fetch additional log details */}
       {selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
@@ -314,6 +259,8 @@ const AdminAuditLogs = () => {
           </div>
         </div>
       )}
+      {loading && <p className="text-dgray">Loading logs...</p>}
+      {error && <p className="text-red-600">{error}</p>}
     </div>
   );
 };

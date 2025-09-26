@@ -1,33 +1,28 @@
+import { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, Users, Package } from 'lucide-react';
+import { getAdminReports, AdminReportsResponse } from '../../services/api';
 
 // Reports and analytics component for admin
-// TODO: When backend is connected, fetch real analytics data from your Express API
 const AdminReports = () => {
-  // TODO: Replace with actual data from backend analytics API
-  const reportData = {
-    totalRevenue: "₱146,269.92", // TODO: Fetch from /api/admin/analytics/revenue
-    totalOrders: "234", // TODO: Fetch from /api/admin/analytics/orders
-    avgOrderValue: "₱3,847", // TODO: Calculate from backend data
-    conversionRate: "12.4%", // TODO: Fetch from analytics API
-    targetAchievement: "84.2%", // TODO: Calculate based on targets
-    avgOrderSize: "₱2,847" // TODO: Calculate from order data
-  };
+  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [data, setData] = useState<AdminReportsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // TODO: Fetch top products data from backend
-  const topProducts = [
-    { name: "Power Drill Kit KJ-2000", sales: 145, revenue: "₱145,000" },
-    { name: "Hammer Set Pro", sales: 127, revenue: "₱31,750" },
-    { name: "Wrench Collection", sales: 108, revenue: "₱21,600" },
-    { name: "Safety Goggles", sales: 98, revenue: "₱9,800" }
-  ];
-
-  // TODO: Fetch category distribution from backend analytics
-  const categoryData = [
-    { category: "Seating", percentage: 35 },
-    { category: "Storage", percentage: 28 },
-    { category: "Tables", percentage: 18 },
-    { category: "Beds", percentage: 19 }
-  ];
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const res = await getAdminReports(period);
+        setData(res);
+      } catch (e: any) {
+        setError(e.message || 'Failed to load reports');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [period]);
 
   return (
     <div className="space-y-6">
@@ -38,25 +33,28 @@ const AdminReports = () => {
       </div>
 
       {/* Time Period Selector */}
-      {/* TODO: When backend is ready, implement dynamic date filtering */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-sage-light">
         <div className="flex gap-2">
-          <button className="bg-dgreen text-cream px-4 py-2 rounded-lg text-sm">Daily</button>
-          <button className="bg-sage-light text-dgreen px-4 py-2 rounded-lg text-sm hover:bg-sage-medium">Weekly</button>
-          <button className="bg-sage-light text-dgreen px-4 py-2 rounded-lg text-sm hover:bg-sage-medium">Monthly</button>
-          <button className="bg-sage-light text-dgreen px-4 py-2 rounded-lg text-sm hover:bg-sage-medium">Yearly</button>
+          {(['day','week','month','year'] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`${period===p?'bg-dgreen text-cream':'bg-sage-light text-dgreen hover:bg-sage-medium'} px-4 py-2 rounded-lg text-sm`}
+            >
+              {p === 'day' ? 'Daily' : p === 'week' ? 'Weekly' : p === 'month' ? 'Monthly' : 'Yearly'}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Key Metrics */}
-      {/* TODO: When backend is ready, these will update based on selected time period */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg p-6 shadow-sm border border-sage-light">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-dgray">Total Revenue</h3>
             <TrendingUp className="w-5 h-5 text-green-600" />
           </div>
-          <p className="text-2xl font-bold text-dgreen">{reportData.totalRevenue}</p>
+          <p className="text-2xl font-bold text-dgreen">{data ? `₱${Number(data.totalRevenue).toLocaleString()}` : '—'}</p>
           <p className="text-sm text-green-600 mt-1">+15.3% vs previous period</p>
         </div>
 
@@ -65,7 +63,7 @@ const AdminReports = () => {
             <h3 className="text-sm font-medium text-dgray">Total Orders</h3>
             <Package className="w-5 h-5 text-blue-600" />
           </div>
-          <p className="text-2xl font-bold text-dgreen">{reportData.totalOrders}</p>
+          <p className="text-2xl font-bold text-dgreen">{data ? data.totalOrders : '—'}</p>
           <p className="text-sm text-blue-600 mt-1">+8.7% vs previous period</p>
         </div>
 
@@ -74,7 +72,7 @@ const AdminReports = () => {
             <h3 className="text-sm font-medium text-dgray">Avg Order Value</h3>
             <Users className="w-5 h-5 text-purple-600" />
           </div>
-          <p className="text-2xl font-bold text-dgreen">{reportData.avgOrderValue}</p>
+          <p className="text-2xl font-bold text-dgreen">{data ? `₱${Number(data.avgOrderValue).toLocaleString()}` : '—'}</p>
           <p className="text-sm text-purple-600 mt-1">+3.2% vs previous period</p>
         </div>
       </div>
@@ -98,7 +96,7 @@ const AdminReports = () => {
         <div className="bg-white rounded-lg p-6 shadow-sm border border-sage-light">
           <h3 className="text-lg font-semibold text-dgreen mb-4">Category Distribution</h3>
           <div className="space-y-4">
-            {categoryData.map((category, index) => (
+            {(data?.category || []).map((category, index) => (
               <div key={index}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-dgreen">{category.category}</span>
@@ -122,7 +120,7 @@ const AdminReports = () => {
         <div className="bg-white rounded-lg p-6 shadow-sm border border-sage-light">
           <h3 className="text-lg font-semibold text-dgreen mb-4">Top Products</h3>
           <div className="space-y-3">
-            {topProducts.map((product, index) => (
+            {(data?.topProducts || []).map((product, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-cream rounded-lg">
                 <div>
                   <p className="font-medium text-dgreen">{product.name}</p>
@@ -143,19 +141,22 @@ const AdminReports = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-dgray">Target Achievement</span>
-              <span className="text-dgreen font-medium">{reportData.targetAchievement}</span>
+              <span className="text-dgreen font-medium">{data?.targetAchievement ? `${data.targetAchievement}%` : '—'}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-dgray">Conversion Rate</span>
-              <span className="text-dgreen font-medium">{reportData.conversionRate}</span>
+              <span className="text-dgreen font-medium">{data?.conversionRate ? `${data.conversionRate}%` : '—'}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-dgray">Avg Order Size</span>
-              <span className="text-dgreen font-medium">{reportData.avgOrderSize}</span>
+              <span className="text-dgreen font-medium">{data?.avgOrderSize ? `₱${Number(data.avgOrderSize).toLocaleString()}` : '—'}</span>
             </div>
           </div>
         </div>
       </div>
+
+      {loading && <p className="text-dgray">Loading reports...</p>}
+      {error && <p className="text-red-600">{error}</p>}
     </div>
   );
 };
