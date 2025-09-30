@@ -135,13 +135,13 @@ const AdminAuditLogs = () => {
               placeholder="Search logs by description or user..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+              className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg"
             />
           </div>
           <select 
             value={selectedFilter}
             onChange={(e) => setSelectedFilter(e.target.value)}
-            className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+            className="px-4 py-2 border border-sage-light rounded-lg cursor-pointer"
           >
             <option>All</option>
             <option>Authentication</option>
@@ -152,7 +152,7 @@ const AdminAuditLogs = () => {
           <select 
             value={selectedDateRange}
             onChange={(e) => setSelectedDateRange(e.target.value)}
-            className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+            className="px-4 py-2 border border-sage-light rounded-lg cursor-pointer"
           >
             <option>Today</option>
             <option>Last 7 days</option>

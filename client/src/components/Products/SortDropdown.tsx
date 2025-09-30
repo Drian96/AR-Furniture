@@ -15,7 +15,7 @@ const SortDropdown = ({ sortBy, onSortChange }: SortDropdownProps) => {
       <select
         value={sortBy}
         onChange={(e) => onSortChange(e.target.value)}
-        className="bg-cream border-2 border-lgreen text-dgreen px-4 py-2 rounded-lg focus:outline-none focus:border-dgreen transition-colors"
+        className="bg-cream border-2 border-lgreen text-dgreen px-4 py-2 rounded-lg focus:outline-none focus:border-dgreen transition-colors cursor-pointer"
       >
         {sortOptions.map((option) => (
           <option key={option} value={option}>

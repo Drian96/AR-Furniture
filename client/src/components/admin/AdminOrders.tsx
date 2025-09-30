@@ -157,7 +157,7 @@ const AdminOrders = () => {
             setShowReturnManagement(true);
             await loadReturnRequests();
           }}
-          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors cursor-pointer"
         >
           Return Management
         </button>
@@ -180,7 +180,7 @@ const AdminOrders = () => {
           <select 
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+            className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen cursor-pointer"
           >
             <option>All Status</option>
             <option>pending</option>
@@ -248,7 +248,7 @@ const AdminOrders = () => {
                       <div className="flex items-center space-x-2">
                         <button 
                           onClick={() => handleViewOrder(order)}
-                          className="text-dgreen hover:text-opacity-70"
+                          className="text-dgreen hover:text-opacity-70 cursor-pointer hover:scale-120"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -259,7 +259,7 @@ const AdminOrders = () => {
                           <button
                             onClick={() => handleStatusUpdate(order.id, 'confirmed')}
                             disabled={updatingStatus === order.id}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-110"
                             title="Confirm Order"
                           >
                             <CheckCircle className="w-4 h-4" />
@@ -270,7 +270,7 @@ const AdminOrders = () => {
                           <button
                             onClick={() => handleStatusUpdate(order.id, 'shipped')}
                             disabled={updatingStatus === order.id}
-                            className="text-purple-600 hover:text-purple-800"
+                            className="text-purple-600 hover:text-purple-800 cursor-pointer hover:scale-110"
                             title="Mark as Shipped"
                           >
                             <Truck className="w-4 h-4" />
@@ -281,7 +281,7 @@ const AdminOrders = () => {
                           <button
                             onClick={() => handleStatusUpdate(order.id, 'delivered')}
                             disabled={updatingStatus === order.id}
-                            className="text-green-600 hover:text-green-800"
+                            className="text-green-600 hover:text-green-800 cursor-pointer hover:scale-110"
                             title="Mark as Delivered"
                           >
                             <Package className="w-4 h-4" />
@@ -292,7 +292,7 @@ const AdminOrders = () => {
                           <button
                             onClick={() => handleStatusUpdate(order.id, 'cancelled')}
                             disabled={updatingStatus === order.id}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-600 hover:text-red-800 cursor-pointer hover:scale-110"
                             title="Cancel Order"
                           >
                             <XCircle className="w-4 h-4" />
@@ -310,7 +310,7 @@ const AdminOrders = () => {
 
       {/* Order Details Modal */}
       {showOrderDetails && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Order Details</h2>
@@ -318,7 +318,7 @@ const AdminOrders = () => {
                 onClick={() => setShowOrderDetails(false)}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 cursor-pointer" />
               </button>
             </div>
 
@@ -441,7 +441,7 @@ const AdminOrders = () => {
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={() => setShowOrderDetails(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Close
               </button>
@@ -461,7 +461,7 @@ const AdminOrders = () => {
       {/* Return Management Modal */}
       {/* TODO: When backend is ready, fetch real return requests */}
       {showReturnManagement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Return Management</h2>

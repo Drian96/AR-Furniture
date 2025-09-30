@@ -39,7 +39,7 @@ const AdminReports = () => {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`${period===p?'bg-dgreen text-cream':'bg-sage-light text-dgreen hover:bg-sage-medium'} px-4 py-2 rounded-lg text-sm`}
+              className={`${period===p?'bg-dgreen text-cream':'bg-sage-light text-dgreen hover:bg-sage-medium'} px-4 py-2 rounded-lg text-sm cursor-pointer`}
             >
               {p === 'day' ? 'Daily' : p === 'week' ? 'Weekly' : p === 'month' ? 'Monthly' : 'Yearly'}
             </button>

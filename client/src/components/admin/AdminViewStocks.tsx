@@ -334,7 +334,7 @@ const AdminViewStocks = () => {
         </div>
         <button 
           onClick={() => setShowAddItemModal(true)}
-          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2"
+          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Add New Item
@@ -444,14 +444,14 @@ const AdminViewStocks = () => {
                         className="text-blue-600 hover:text-blue-800"
                           title="Edit product"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-4 h-4 cursor-pointer hover:scale-120" />
                       </button>
                       <button 
                         onClick={() => handleDeleteItem(item)}
                         className="text-red-600 hover:text-red-800"
                           title="Delete product"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4 cursor-pointer hover:scale-120" />
                       </button>
                     </div>
                   </td>
@@ -474,7 +474,7 @@ const AdminViewStocks = () => {
                 onClick={() => { setShowAddItemModal(false); resetAddForm(); }}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 cursor-pointer" />
               </button>
             </div>
 
@@ -614,7 +614,7 @@ const AdminViewStocks = () => {
                 <button
                   type="button"
                   onClick={() => { setShowAddItemModal(false); resetAddForm(); }}
-                  className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                  className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -626,7 +626,7 @@ const AdminViewStocks = () => {
                       setShowAddConfirm(true);
                     }
                   }}
-                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-lgreen cursor-pointer"
                 >
                   Add Item
                 </button>
@@ -638,7 +638,7 @@ const AdminViewStocks = () => {
 
       {/* Edit Item Modal */}
       {showEditItemModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Edit Stock Item</h2>
@@ -646,7 +646,7 @@ const AdminViewStocks = () => {
                 onClick={() => { setShowEditItemModal(false); resetEditForm(); }}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 cursor-pointer" />
               </button>
             </div>
 
@@ -817,7 +817,7 @@ const AdminViewStocks = () => {
                 <button
                   type="button"
                   onClick={() => { setShowEditItemModal(false); resetEditForm(); }}
-                  className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                  className="flex-1 px-4 py-2 border border-dgreen text-dgray rounded-lg hover:border-lgreen cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -829,7 +829,7 @@ const AdminViewStocks = () => {
                       setShowUpdateConfirm(true);
                     }
                   }}
-                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-lgreen cursor-pointer"
                 >
                   Update Item
                 </button>
@@ -856,13 +856,13 @@ const AdminViewStocks = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                className="flex-1 px-4 py-2 border border-dgreen text-dgray rounded-lg hover:border-lgreen cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 cursor-pointer"
               >
                 Delete
               </button>

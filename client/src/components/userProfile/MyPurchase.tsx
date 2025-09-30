@@ -220,7 +220,7 @@ const MyPurchase = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
                 activeTab === tab.id
                   ? 'border-dgreen text-dgreen'
                   : 'border-transparent text-dgray hover:text-dgreen'
@@ -293,7 +293,7 @@ const MyPurchase = () => {
             <div className="mt-4 flex justify-end space-x-3">
                 <button 
                   onClick={() => handleViewOrderDetails(order)}
-                  className="px-4 py-2 border border-dgreen text-dgreen rounded-lg hover:bg-dgreen hover:text-white transition-colors flex items-center space-x-2"
+                  className="px-4 py-2 border border-dgreen text-dgreen rounded-lg hover:bg-dgreen hover:text-white cursor-pointer flex items-center space-x-2"
                 >
                   <Eye className="w-4 h-4" />
                   <span>View Details</span>
@@ -306,7 +306,7 @@ const MyPurchase = () => {
                       setActionOrder(order);
                       setShowCancelConfirm(true);
                     }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                   >
                     Cancel Order
                   </button>
@@ -320,7 +320,7 @@ const MyPurchase = () => {
                         setActionOrder(order);
                         setShowOrderReceivedConfirm(true);
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
                     >
                       Order Received
                     </button>
@@ -329,7 +329,7 @@ const MyPurchase = () => {
                         setActionOrder(order);
                         setShowReturnRequestConfirm(true);
                       }}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors cursor-pointer"
                     >
                       Request Return/Refund
                     </button>
@@ -343,7 +343,7 @@ const MyPurchase = () => {
                       setActionOrder(order);
                       setShowRatingModal(true);
                     }}
-                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors cursor-pointer"
                   >
                 Rate
               </button>
@@ -356,7 +356,7 @@ const MyPurchase = () => {
 
       {/* Order Details Modal */}
       {showOrderDetails && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Order Details</h2>
@@ -364,7 +364,7 @@ const MyPurchase = () => {
                 onClick={() => setShowOrderDetails(false)}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 cursor-pointer" />
               </button>
             </div>
 
@@ -481,12 +481,12 @@ const MyPurchase = () => {
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={() => setShowOrderDetails(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-lgreen text-gray-700 rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Close
               </button>
               {selectedOrder.status === 'pending' && (
-                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer">
                   Cancel Order
                 </button>
               )}
@@ -565,7 +565,7 @@ const MyPurchase = () => {
 
       {/* Return/Refund Request Confirmation Modal */}
       {showReturnRequestConfirm && actionOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-dgreen">Request Return/Refund</h3>
@@ -573,7 +573,7 @@ const MyPurchase = () => {
                 onClick={() => setShowReturnRequestConfirm(false)}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 cursor-pointer" />
               </button>
             </div>
             <p className="text-gray-600 mb-6">
@@ -582,13 +582,13 @@ const MyPurchase = () => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowReturnRequestConfirm(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-lgreen text-gray-700 rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReturnRequest}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 cursor-pointer"
               >
                 Yes, Request Return/Refund
               </button>

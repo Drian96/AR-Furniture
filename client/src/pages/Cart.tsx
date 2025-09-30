@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import Header from '../shared/Header';
+import Footer from '../shared/Footer';
 
 const CartPage = () => {
   const { items, totalPrice, updateQuantity, removeItem, clear } = useCart();
@@ -36,7 +37,7 @@ const CartPage = () => {
                     <button onClick={() => updateQuantity(it.productId, it.quantity + 1)} className="px-3 py-1 border rounded">+</button>
                   </div>
                   <div className="w-28 text-right text-dgreen font-semibold">₱{(it.price * it.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
-                  <button onClick={() => removeItem(it.productId)} className="text-red-600 hover:text-red-700">Remove</button>
+                  <button onClick={() => removeItem(it.productId)} className="text-red-600 hover:text-red-800 cursor-pointer">Remove</button>
                 </div>
               ))}
             </div>
@@ -48,15 +49,18 @@ const CartPage = () => {
               </div>
               <button 
                 onClick={() => navigate('/checkout')}
-                className="w-full bg-dgreen text-cream px-6 py-3 rounded-lg hover:bg-lgreen mb-3"
+                className="w-full bg-dgreen text-cream px-6 py-3 rounded-lg hover:bg-lgreen mb-3 cursor-pointer"
               >
                 Proceed to Checkout
               </button>
-              <button onClick={clear} className="w-full border border-sage-light text-dgray px-6 py-3 rounded-lg hover:bg-sage-light">Clear Cart</button>
+              <button onClick={clear} className="w-full border border-sage-light text-dgray px-6 py-3 rounded-lg hover:bg-sage-light cursor-pointer">Clear Cart</button>
             </div>
           </div>
         )}
       </div>
+
+      <Footer />
+      
     </div>
   );
 };

@@ -138,7 +138,7 @@ const ProfileInformation = () => {
             name="gender"
             value={form.gender}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-lgray rounded-lg focus:outline-none focus:border-dgreen"
+            className="w-full px-4 py-2 border border-lgray rounded-lg cursor-pointer"
           >
             <option value="male">Male</option>
             <option value="female">Female</option>
@@ -150,15 +150,16 @@ const ProfileInformation = () => {
           <button
             type="submit"
             disabled={!isDirty || saving || isLoading}
-            className="bg-lgreen text-dgreen px-6 py-2 rounded-lg font-medium hover:bg-opacity-80 transition-colors disabled:opacity-60"
+            className="bg-lgreen text-dgreen px-6 py-2 rounded-lg font-medium hover:bg-opacity-80 transition-colors cursor-pointer disabled:opacity-60"
           >
             {saving ? 'Saving...' : 'Update Profile'}
           </button>
+
           <button
             type="button"
             onClick={() => setForm(initialState)}
             disabled={saving}
-            className="border border-lgray text-dgray px-6 py-2 rounded-lg font-medium hover:bg-lgray hover:bg-opacity-20 transition-colors disabled:opacity-60"
+            className="border border-lgray text-dgray px-6 py-2 rounded-lg font-medium hover:bg-lgray hover:bg-opacity-20 cursor-pointer disabled:opacity-60"
           >
             Cancel
           </button>
@@ -181,13 +182,13 @@ const ProfileInformation = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmUpdate}
-                className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-lgreen cursor-pointer"
               >
                 Confirm
               </button>

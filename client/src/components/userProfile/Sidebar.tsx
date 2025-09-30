@@ -52,7 +52,7 @@ const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
               className={`
                 flex items-center justify-center lg:justify-start
                 w-12 h-12 lg:w-full lg:h-auto lg:space-x-3 lg:px-4 lg:py-3
-                rounded-lg text-left transition-all duration-200 ease-in-out
+                rounded-lg text-left transition-all duration-200 ease-in-out cursor-pointer
                 ${isActive 
                   ? 'bg-dgreen text-cream shadow-md' // Active state: dark green background with cream text
                   : 'text-dgreen hover:bg-sage-medium hover:shadow-sm' // Inactive state: hover effects

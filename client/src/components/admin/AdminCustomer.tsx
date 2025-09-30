@@ -218,7 +218,7 @@ const AdminCustomer = () => {
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+              className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg"
             />
             {searchTerm && (
               <button
@@ -229,7 +229,7 @@ const AdminCustomer = () => {
               </button>
             )}
           </div>
-          <select className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen">
+          <select className="px-4 py-2 border border-sage-light rounded-lg hover:border-dgreen cursor-pointer">
             <option>All Status</option>
             <option>Active</option>
             <option>Inactive</option>
@@ -281,19 +281,19 @@ const AdminCustomer = () => {
                       <div className="flex gap-2">
                         <button 
                           onClick={() => handleViewCustomer(customer)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-120"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleEditCustomer(customer)}
-                          className="text-green-600 hover:text-green-800"
+                          className="text-green-600 hover:text-green-800 cursor-pointer hover:scale-120"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleDeleteCustomer(customer)}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-600 hover:text-red-800 cursor-pointer hover:scale-120"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -316,7 +316,7 @@ const AdminCustomer = () => {
       {/* Customer Details Modal */}
       {/* TODO: When backend is ready, fetch detailed customer info and order history */}
       {showCustomerDetails && selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Customer Details</h2>
@@ -324,7 +324,7 @@ const AdminCustomer = () => {
                 onClick={() => setShowCustomerDetails(false)}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 cursor-pointer" />
               </button>
             </div>
 
@@ -408,7 +408,7 @@ const AdminCustomer = () => {
 
       {/* Edit Customer Modal */}
       {showEditCustomer && selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Edit Customer Information</h2>
@@ -416,7 +416,7 @@ const AdminCustomer = () => {
                 onClick={() => setShowEditCustomer(false)}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 cursor-pointer" />
               </button>
             </div>
 
@@ -498,13 +498,13 @@ const AdminCustomer = () => {
                 <button
                   type="button"
                   onClick={() => setShowEditCustomer(false)}
-                  className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                  className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-lgreen cursor-pointer"
                 >
                   Update Customer
                 </button>
@@ -516,7 +516,7 @@ const AdminCustomer = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
             <div className="mb-6">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -531,13 +531,13 @@ const AdminCustomer = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 cursor-pointer"
               >
                 Delete
               </button>

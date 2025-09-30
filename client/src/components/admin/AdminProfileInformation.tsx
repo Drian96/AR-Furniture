@@ -33,17 +33,17 @@ const AdminProfileInformation = () => {
         </div>
         <div>
           <label className="block text-sm font-medium text-dgreen mb-2">Admin Role</label>
-          <select className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen">
+          <select className="w-full px-3 py-2 border border-sage-light rounded-lg cursor-pointer">
             <option>Administrator</option>
             <option>Manager</option>
             <option>Staff</option>
           </select>
         </div>
         <div className="flex gap-4">
-          <button className="bg-dgreen text-cream px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+          <button className="bg-dgreen text-cream px-6 py-2 rounded-lg hover:bg-lgreen cursor-pointer">
             Update Profile
           </button>
-          <button className="border border-sage-light text-dgray px-6 py-2 rounded-lg hover:bg-sage-light transition-colors">
+          <button className="border border-lgreen text-dgray px-6 py-2 rounded-lg hover:border-dgreen cursor-pointer">
             Cancel
           </button>
         </div>

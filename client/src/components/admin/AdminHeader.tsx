@@ -83,7 +83,7 @@ const Header = () => {
                   )}
                   <button
                     onClick={() => setShowLogoutConfirm(true)}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                   >
                     Log out
                   </button>
@@ -107,13 +107,13 @@ const Header = () => {
           <div className="flex gap-4">
             <button
               onClick={() => setShowLogoutConfirm(false)}
-              className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+              className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleLogout}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 cursor-pointer"
             >
               Logout
             </button>

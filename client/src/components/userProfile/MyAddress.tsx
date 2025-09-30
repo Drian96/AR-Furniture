@@ -179,7 +179,7 @@ const MyAddress = () => {
         <h2 className="text-2xl font-bold text-dgreen">My Addresses</h2>
         <button
           onClick={handleAddAddress}
-          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center space-x-2"
+          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-lgreen cursor-pointer flex items-center space-x-2"
         >
           <span>+</span>
           <span>Add New Address</span>
@@ -220,20 +220,20 @@ const MyAddress = () => {
                 <div className="flex space-x-3">
                   <button 
                     onClick={() => handleEditAddress(address)}
-                    className="text-dgreen hover:underline"
+                    className="text-dgreen hover:underline cursor-pointer"
                   >
                     Edit
                   </button>
                   <button 
                     onClick={() => handleDeleteAddress(address)}
-                    className="text-red-600 hover:underline"
+                    className="text-red-600 hover:underline cursor-pointer"
                   >
                     Delete
                   </button>
                   {!address.is_default && (
                     <button 
                       onClick={() => handleSetDefault(address)}
-                      className="text-dgreen hover:underline"
+                      className="text-dgreen hover:underline cursor-pointer"
                     >
                       Set as default
                     </button>
@@ -332,7 +332,7 @@ const MyAddress = () => {
                       value="home" 
                       checked={formData.address_type === 'home'}
                       onChange={(e) => setFormData({ ...formData, address_type: e.target.value as 'home' | 'work' | 'other' })}
-                      className="mr-2" 
+                      className="mr-2 cursor-pointer" 
                     />
                     <span className="text-dgray">Home</span>
                   </label>
@@ -343,7 +343,7 @@ const MyAddress = () => {
                       value="work" 
                       checked={formData.address_type === 'work'}
                       onChange={(e) => setFormData({ ...formData, address_type: e.target.value as 'home' | 'work' | 'other' })}
-                      className="mr-2" 
+                      className="mr-2 cursor-pointer" 
                     />
                     <span className="text-dgray">Work</span>
                   </label>
@@ -354,7 +354,7 @@ const MyAddress = () => {
                       value="other" 
                       checked={formData.address_type === 'other'}
                       onChange={(e) => setFormData({ ...formData, address_type: e.target.value as 'home' | 'work' | 'other' })}
-                      className="mr-2" 
+                      className="mr-2 cursor-pointer" 
                     />
                     <span className="text-dgray">Other</span>
                   </label>
@@ -365,13 +365,13 @@ const MyAddress = () => {
                 <button
                   type="button"
                   onClick={closeForms}
-                  className="px-4 py-2 border border-lgray text-dgray rounded-lg hover:bg-lgray hover:bg-opacity-20 transition-colors"
+                  className="px-4 py-2 border border-lgray text-dgray rounded-lg hover:bg-lgray hover:bg-opacity-20 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                  className="px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-lgreen cursor-pointer"
                 >
                   {showEditForm ? 'Update' : 'Submit'}
                 </button>
@@ -393,13 +393,13 @@ const MyAddress = () => {
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-lgray text-dgray rounded-lg hover:bg-lgray hover:bg-opacity-20 transition-colors"
+                className="flex-1 px-4 py-2 border border-lgray text-dgray rounded-lg hover:bg-lgray hover:bg-opacity-20 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 cursor-pointer"
               >
                 Delete
               </button>

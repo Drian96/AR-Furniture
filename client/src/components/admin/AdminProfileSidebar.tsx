@@ -68,7 +68,7 @@ const AdminProfileSidebar = ({ activeSection, setActiveSection }: AdminSidebarPr
               onClick={() => setActiveSection(item.id)}
               className={`
                 w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left
-                transition-all duration-200 ease-in-out
+                transition-all duration-200 ease-in-out cursor-pointer
                 ${isActive
                   ? 'bg-dgreen text-cream shadow-md' // Active state: dark green background with cream text
                   : 'text-dgreen hover:bg-sage-medium hover:shadow-sm' // Inactive state: hover effects
@@ -87,7 +87,7 @@ const AdminProfileSidebar = ({ activeSection, setActiveSection }: AdminSidebarPr
         <button
           onClick={handleLogout}
           className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left
-                     text-red-600 hover:bg-red-50 hover:shadow-sm transition-all duration-200 ease-in-out"
+                     text-red-600 hover:bg-red-50 hover:shadow-sm transition-all duration-200 ease-in-out cursor-pointer"
         >
           <LogOut className="w-5 h-5" />
           <span className="text-sm font-medium">Logout</span>

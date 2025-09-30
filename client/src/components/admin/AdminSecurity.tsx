@@ -24,7 +24,7 @@ const AdminSecurity = () => {
             />
           </div>
         </div>
-        <button className="bg-dgreen text-cream px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+        <button className="bg-dgreen text-cream px-6 py-2 rounded-lg hover:bg-lgreen cursor-pointer">
           Update Password
         </button>
       </div>

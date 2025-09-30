@@ -156,13 +156,13 @@ const AdminRatesReviews = () => {
               placeholder="Search reviews..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+              className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg"
             />
           </div>
           <select 
             value={selectedFilter}
             onChange={(e) => setSelectedFilter(e.target.value)}
-            className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+            className="px-4 py-2 border border-sage-light rounded-lg cursor-pointer"
           >
             <option>All</option>
             <option>Published</option>
@@ -224,14 +224,14 @@ const AdminRatesReviews = () => {
                     <>
                       <button 
                         onClick={() => handleApproveReview(review.id)}
-                        className="text-green-600 hover:text-green-800 px-2 py-1 text-sm"
+                        className="text-green-600 hover:text-green-800 px-2 py-1 text-sm cursor-pointer"
                         title="Approve Review"
                       >
                         Approve
                       </button>
                       <button 
                         onClick={() => handleRejectReview(review.id)}
-                        className="text-orange-600 hover:text-orange-800 px-2 py-1 text-sm"
+                        className="text-orange-600 hover:text-orange-800 px-2 py-1 text-sm cursor-pointer"
                         title="Reject Review"
                       >
                         Reject
@@ -241,7 +241,7 @@ const AdminRatesReviews = () => {
                   {review.status === 'approved' && (
                     <button 
                       onClick={() => handleRejectReview(review.id)}
-                      className="text-orange-600 hover:text-orange-800 px-2 py-1 text-sm"
+                      className="text-orange-600 hover:text-orange-800 px-2 py-1 text-sm cursor-pointer"
                       title="Reject Review"
                     >
                       Reject
@@ -250,7 +250,7 @@ const AdminRatesReviews = () => {
                   {review.status === 'rejected' && (
                     <button 
                       onClick={() => handleApproveReview(review.id)}
-                      className="text-green-600 hover:text-green-800 px-2 py-1 text-sm"
+                      className="text-green-600 hover:text-green-800 px-2 py-1 text-sm cursor-pointer"
                       title="Approve Review"
                     >
                       Approve
@@ -261,7 +261,7 @@ const AdminRatesReviews = () => {
                     className="text-red-600 hover:text-red-800"
                     title="Delete Review"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 hover:scale-115 cursor-pointer" />
                   </button>
                 </div>
               </div>
@@ -273,7 +273,7 @@ const AdminRatesReviews = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && selectedReview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
             <div className="mb-6">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -288,13 +288,13 @@ const AdminRatesReviews = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 cursor-pointer"
               >
                 Delete
               </button>

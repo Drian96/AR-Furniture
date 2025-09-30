@@ -76,13 +76,14 @@ const Header = () => {
               }}
             >
               <button className="relative" onClick={() => setShowCart((s) => !s)} aria-haspopup="dialog" aria-expanded={showCart}>
-                <ShoppingCart className="w-6 h-6" />
+                <ShoppingCart className="w-6 h-6 cursor-pointer" />
                 {totalQuantity > 0 && (
                   <span className="absolute -top-2 -right-2 bg-dgreen text-cream text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {totalQuantity}
                   </span>
                 )}
               </button>
+              
               {/* Cart Dropdown */}
               {showCart && (
                 <div className="absolute right-0 top-full w-80 bg-white rounded-lg shadow-lg border border-sage-light p-4 z-50 mt-2">
@@ -111,7 +112,7 @@ const Header = () => {
                     <span className="text-dgreen font-semibold">Total:</span>
                     <span className="text-dgreen font-bold">₱{totalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
                   </div>
-                  <Link to="/cart" className="block mt-4 w-full text-center bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-lgreen transition-colors">
+                  <Link to="/cart" className="block mt-4 w-full text-center bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-lgreen cursor-pointer">
                     View my shopping cart
                   </Link>
                 </div>
@@ -126,14 +127,14 @@ const Header = () => {
                   className="text-dgreen hover:text-lgreen transition-colors p-2 rounded-full border border-lgreen"
                   title={user?.firstName ? `${user.firstName} ${user.lastName}` : 'Profile'}
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-5 h-5 cursor-pointer" />
                 </Link>
                 <button
                   onClick={handleLogoutClick}
                   className="text-dgreen hover:text-lgreen transition-colors p-2 rounded-full border border-lgreen"
                   title="Logout"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4 cursor-pointer" />
                 </button>
               </div>
             ) : (
@@ -147,8 +148,6 @@ const Header = () => {
           </div>
         </div>
       </div>
-
-
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
@@ -166,13 +165,13 @@ const Header = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 cursor-pointer"
               >
                 Logout
               </button>

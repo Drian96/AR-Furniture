@@ -197,7 +197,7 @@ const AdminUserAccounts = () => {
         </div>
         <button 
           onClick={() => setShowAddUserModal(true)}
-          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2"
+          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2  cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Add New User
@@ -215,10 +215,10 @@ const AdminUserAccounts = () => {
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen"
+              className="w-full pl-10 pr-4 py-2 border border-sage-light rounded-lg"
             />
           </div>
-          <select className="px-4 py-2 border border-sage-light rounded-lg focus:outline-none focus:ring-2 focus:ring-dgreen">
+          <select className="px-4 py-2 border border-sage-light rounded-lg cursor-pointer">
             <option>All Status</option>
             <option>Active</option>
             <option>Inactive</option>
@@ -257,15 +257,15 @@ const AdminUserAccounts = () => {
                     <div className="flex gap-2">
                       <button 
                         onClick={() => handleEditUser(user)}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 hover:text-blue-800 cursor-pointer hover:scale-120"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-4 h-4 cursor-pointer hover:scale-120" />
                       </button>
                       <button 
                         onClick={() => handleDeleteUser(user)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4 cursor-pointer hover:scale-120" />
                       </button>
                     </div>
                   </td>
@@ -286,7 +286,7 @@ const AdminUserAccounts = () => {
               onClick={() => setShowAddUserModal(false)}
               className="text-dgray hover:text-dgreen"
             >
-              <X className="w-6 h-6" />
+              <X className="w-6 h-6 cursor-pointer" />
             </button>
           </div>
 
@@ -399,14 +399,14 @@ const AdminUserAccounts = () => {
               <button
                 type="button"
                 onClick={() => setShowAddUserModal(false)}
-                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!isFormValid}
-                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${isFormValid ? 'bg-dgreen text-cream hover:bg-opacity-90' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${isFormValid ? 'bg-dgreen text-cream hover:bg-lgreen cursor-pointer' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
               >
                 Add New User
               </button>
@@ -450,13 +450,13 @@ const AdminUserAccounts = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 cursor-pointer"
               >
                 Delete
               </button>
@@ -467,7 +467,7 @@ const AdminUserAccounts = () => {
 
       {/* Edit User Modal */}
       {showEditUserModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Edit User Account</h2>
@@ -475,7 +475,7 @@ const AdminUserAccounts = () => {
                 onClick={() => setShowEditUserModal(false)}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 cursor-pointer" />
               </button>
             </div>
 
@@ -551,13 +551,13 @@ const AdminUserAccounts = () => {
                 <button
                   type="button"
                   onClick={() => setShowEditUserModal(false)}
-                  className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                  className="flex-1 px-4 py-2 border border-lgreen text-dgray rounded-lg hover:border-dgreen cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                  className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-lgreen cursor-pointer"
                 >
                   Update User
                 </button>

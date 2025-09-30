@@ -88,7 +88,7 @@ const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
                   const firstImage = imagesByProduct[product.id]?.[0]?.image_url;
                   addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, 1);
                 }}
-                className="w-full mt-4 bg-dgreen text-cream px-6 py-3 rounded-lg font-medium hover:bg-lgreen transition-all duration-300"
+                className="w-full mt-4 bg-dgreen text-cream px-6 py-3 rounded-lg font-medium hover:bg-lgreen cursor-pointer"
               >
                 Add to Cart
               </button>

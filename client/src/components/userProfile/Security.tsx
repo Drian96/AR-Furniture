@@ -137,7 +137,7 @@ const Security = () => {
         {renderPasswordField('Confirm New Password', confirmPassword, setConfirmPassword, showConfirm, setShowConfirm, 'confirmPassword')}
 
         <button
-          className="bg-dgreen text-cream px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-60"
+          className="bg-dgreen text-cream px-6 py-2 rounded-lg hover:bg-lgreen cursor-pointer disabled:opacity-60"
           type="submit"
           disabled={saving || isLoading}
         >
