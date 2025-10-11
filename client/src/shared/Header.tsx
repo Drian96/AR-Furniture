@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import furnitureLogo from '../assets/AR-Furniture_Logo.png';
-import shopName from '../assets/Name.png'
+import shopName from '../assets/NAME.png'
 
 
 const Header = () => {
