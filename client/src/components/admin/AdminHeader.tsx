@@ -2,6 +2,8 @@ import { Bell, User, ChevronDown, LogOut as LogOutIcon } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext';
+import furnitureLogo from '../../assets/AR-Furniture_Logo.png'
+import shopName from '../../assets/Name.png'
 
 const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -32,13 +34,16 @@ const Header = () => {
 
   return (
     <>
-    <header className="bg-cream shadow-sm sticky top-0 z-50">
+    <header className="bg-cream sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
           <div className="flex items-center">
             <Link to="/admin" className="text-2xl font-serif font-bold text-dgreen hover:text-lgreen transition-colors">
-              AR-Furniture
+              <div className="flex items-center">
+                <img src={furnitureLogo} alt="Furniture Logo" className="h-12 mt-2" />
+                <img src={shopName} alt="Shop Name" className="h-10 mt-2" />
+              </div>
             </Link>
 
           </div>

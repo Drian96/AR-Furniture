@@ -6,22 +6,22 @@ const Testimonials = () => {
     {
       id: 1,
       name: "Sarah Johnson",
-      location: "Portland, OR",
-      text: "AR-Furniture transformed our living space completely. The quality is exceptional and knowing it's sustainable makes it even better.",
+      location: "Santa Maria, Bulacan",
+      text: "ONEIRIC transformed our living space completely. The quality is exceptional and knowing it's sustainable makes it even better.",
       rating: 5
     },
     {
       id: 2,
       name: "Michael Chen",
-      location: "San Francisco, CA",
+      location: "San Carlos, Pangasinan",
       text: "The craftsmanship is incredible. Each piece feels like it was made specifically for our home. Couldn't be happier with our dining set.",
       rating: 5
     },
     {
       id: 3,
       name: "Emily Rodriguez",
-      location: "Austin, TX",
-      text: "Finally found furniture that matches our values. Beautiful, durable, and environmentally conscious. AR-Furniture is our go-to now.",
+      location: "Angeles City, Pampanga",
+      text: "Finally found furniture that matches our values. Beautiful, durable, and environmentally conscious. ONEIRIC is our go-to now.",
       rating: 5
     }
   ];
@@ -34,7 +34,7 @@ const Testimonials = () => {
             What Our Customers Say
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Don't just take our word for it - hear from families who have transformed their homes with AR-Furniture
+            Don't just take our word for it - hear from families who have transformed their homes with ONEIRIC
           </p>
         </div>
         

@@ -12,7 +12,7 @@ const About = () => {
               Crafted with Purpose, Designed for Life
             </h2>
             <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-              For over two decades, AR-Furniture has been at the forefront of sustainable furniture design. 
+              For over two decades, ONEIRIC has been at the forefront of sustainable furniture design. 
               We believe that beautiful furniture shouldn't come at the cost of our environment.
             </p>
             <p className="text-lg text-gray-700 mb-8 leading-relaxed">

@@ -2,12 +2,12 @@ import { Twitter, Facebook, Instagram } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-lgray">
+    <footer id="contact" className="bg-lgray">
       <div className="max-w-7xl mx-auto p-5">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <div>
             <h3 className="text-2xl font-serif font-bold text-gray-900 mb-4">
-              AR-Furniture
+              ONEIRIC
             </h3>
             <p className="text-gray-900 mb-4">
               Sustainable furniture for conscious living. Creating beautiful spaces that respect our planet.
@@ -62,7 +62,7 @@ const Footer = () => {
         <div className="border-t border-sage-medium pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-900 text-sm">
-              © 2025 AR-Furniture. All rights reserved.
+              © 2025 ONEIRIC. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0 text-sm text-gray-900">
               <a href="#" className="hover:text-sage-dark transition-colors">Privacy Policy</a>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import furnitureLogo from '../../assets/AR-Furniture_Logo.png';
+import shopName from '../../assets/Name.png';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -18,15 +19,20 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-cream top-0 z-50 backdrop-blur-sm">
+    <header className="bg-cream top-0 z-50 backdrop-blur-sm sticky">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-auto">
+        <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
             <img 
               src={furnitureLogo} 
               alt="Furniture Logo" 
-              className="h-22 w-auto mt-2"
+              className="h-20 mt-2"
+            />
+            <img 
+              src={shopName} 
+              alt="Shop Name" 
+              className="h-10 mt-2"
             />
           </div>
 
