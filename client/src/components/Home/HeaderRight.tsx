@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import furnitureLogo from '../../assets/AR-Furniture_Logo.png';
-import shopName from '../../assets/Name.png';
+import shopName from '../../assets/NAME.png';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
