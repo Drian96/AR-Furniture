@@ -1,8 +1,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { productService, type Product as DbProduct, type ProductImage } from '../../services/supabase';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ProductGridProps {
   selectedCategory: string;
@@ -14,6 +15,8 @@ const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
   const [imagesByProduct, setImagesByProduct] = useState<Record<string, ProductImage[]>>({});
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const load = async () => {
@@ -85,6 +88,10 @@ const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
               <button 
                 onClick={(e) => {
                   e.preventDefault();
+                  if (!isAuthenticated) {
+                    navigate('/login');
+                    return;
+                  }
                   const firstImage = imagesByProduct[product.id]?.[0]?.image_url;
                   addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, 1);
                 }}

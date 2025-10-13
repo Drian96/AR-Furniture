@@ -1,9 +1,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2 } from 'lucide-react';
 import { productService, reviewService, type Product as DbProduct, type ProductImage, type ProductReview, type ProductReviewStats } from '../../services/supabase';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
+import ARViewer from '../AR/ARViewer';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -14,7 +16,10 @@ const ProductDetail = () => {
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [reviewStats, setReviewStats] = useState<ProductReviewStats | null>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [showAR, setShowAR] = useState(false);
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const load = async () => {
@@ -55,14 +60,33 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     const firstImage = images[0]?.image_url;
     addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, quantity);
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    console.log(`Buying ${quantity} ${product.name}`);
-    // TODO: Implement buy now functionality
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    // Add item to cart and redirect to checkout
+    const firstImage = images[0]?.image_url;
+    addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, quantity);
+    navigate('/checkout');
+  };
+
+  const handleTryAR = () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    setShowAR(true);
   };
 
   return (
@@ -152,7 +176,7 @@ const ProductDetail = () => {
                 </button>
               </div>
                             <button
-                              onClick={handleAddToCart}
+                              onClick={handleTryAR}
                               className="bg-red-900 text-cream px-5 py-2.5 rounded-lg font-medium hover:bg-red-700 transition-all duration-300 text-lg cursor-pointer"
                             > TRY NOW!</button>
             </div>
@@ -288,6 +312,15 @@ const ProductDetail = () => {
           )}
         </div>
       </div>
+
+      {/* AR Viewer Modal */}
+      {showAR && product && (
+        <ARViewer
+          productImage={productImages[selectedImage] || productImages[0]}
+          productName={product.name}
+          onClose={() => setShowAR(false)}
+        />
+      )}
     </div>
   );
 };
