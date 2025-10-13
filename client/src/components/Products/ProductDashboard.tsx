@@ -4,7 +4,11 @@ import ProductGrid from './ProductGrid';
 import SortDropdown from './SortDropdown';
 import { useState } from 'react';
 
-const ProductDashboard = () => {
+interface ProductDashboardProps {
+  searchQuery?: string;
+}
+
+const ProductDashboard = ({ searchQuery = '' }: ProductDashboardProps) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('Most Relevant');
 
@@ -19,7 +23,12 @@ const ProductDashboard = () => {
       {/* Sort Dropdown */}
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-serif font-bold text-dgreen">
-          {selectedCategory === 'All' ? 'All Products' : selectedCategory}
+          {searchQuery.trim() 
+            ? `Search Results for "${searchQuery}"` 
+            : selectedCategory === 'All' 
+              ? 'All Products' 
+              : selectedCategory
+          }
         </h2>
         <SortDropdown 
           sortBy={sortBy}
@@ -31,6 +40,7 @@ const ProductDashboard = () => {
       <ProductGrid 
         selectedCategory={selectedCategory}
         sortBy={sortBy}
+        searchQuery={searchQuery}
       />
     </div>
   );

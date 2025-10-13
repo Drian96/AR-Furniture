@@ -8,9 +8,10 @@ import { useAuth } from '../../contexts/AuthContext';
 interface ProductGridProps {
   selectedCategory: string;
   sortBy: string;
+  searchQuery?: string;
 }
 
-const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
+const ProductGrid = ({ selectedCategory, sortBy, searchQuery = '' }: ProductGridProps) => {
   const [items, setItems] = useState<DbProduct[]>([]);
   const [imagesByProduct, setImagesByProduct] = useState<Record<string, ProductImage[]>>({});
   const [loading, setLoading] = useState(true);
@@ -34,10 +35,24 @@ const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
   }, []);
 
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = selectedCategory === 'All' 
-      ? items 
-      : items.filter(product => product.category === selectedCategory);
+    let filtered = items;
 
+    // Apply category filter
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query) ||
+        (product.description && product.description.toLowerCase().includes(query))
+      );
+    }
+
+    // Apply sorting
     switch (sortBy) {
       case 'Lowest Price':
         return [...filtered].sort((a, b) => a.price - b.price);
@@ -48,12 +63,29 @@ const ProductGrid = ({ selectedCategory, sortBy }: ProductGridProps) => {
       default:
         return filtered;
     }
-  }, [items, selectedCategory, sortBy]);
+  }, [items, selectedCategory, sortBy, searchQuery]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
       {loading ? (
         <div className="col-span-full text-center text-dgray">Loading...</div>
+      ) : filteredAndSortedProducts.length === 0 ? (
+        <div className="col-span-full text-center py-12">
+          <div className="text-dgray mb-4">
+            <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <h3 className="text-xl font-semibold text-dgreen mb-2">
+              {searchQuery.trim() ? 'No products found' : 'No products available'}
+            </h3>
+            <p className="text-dgray">
+              {searchQuery.trim() 
+                ? `No products match "${searchQuery}". Try a different search term.`
+                : 'No products are currently available in this category.'
+              }
+            </p>
+          </div>
+        </div>
       ) : filteredAndSortedProducts.map((product) => (
         <div key={product.id} className="group cursor-pointer">
           <Link to={`/product/${product.id}`}>

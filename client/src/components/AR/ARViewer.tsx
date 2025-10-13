@@ -64,6 +64,23 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
     };
   }, []);
 
+  // Handle mobile viewport issues
+  useEffect(() => {
+    // Prevent body scroll when AR is open
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+
+    return () => {
+      // Restore body scroll when AR is closed
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
+  }, []);
+
   // Draw AR overlay
   useEffect(() => {
     let animationId: number;
@@ -258,9 +275,9 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+    <div className="fixed inset-0 bg-black z-50 flex flex-col h-screen">
       {/* Header */}
-      <div className="text-white p-4 flex items-center justify-between">
+      <div className="text-white p-3 flex items-center justify-between flex-shrink-0">
         <div>
           <h2 className="text-lg font-semibold">AR Preview</h2>
           <p className="text-sm text-gray-300">{productName}</p>
@@ -274,7 +291,7 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
       </div>
 
       {/* Camera View */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-h-0">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black">
             <div className="text-center text-white">
@@ -317,56 +334,56 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
       </div>
 
       {/* Controls */}
-      <div className="bg-black/75 text-white p-4">
-        <div className="flex items-center justify-center space-x-4">
+      <div className="bg-black/75 text-white p-3 flex-shrink-0">
+        <div className="flex items-center justify-center space-x-2 mb-3">
           <button
             onClick={() => handleZoom(-0.2)}
-            className="p-3 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
+            className="p-2 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
             title="Zoom Out"
           >
-            <ZoomOut className="w-5 h-5" />
+            <ZoomOut className="w-4 h-4" />
           </button>
           
           <button
             onClick={handleRotate}
-            className="p-3 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
+            className="p-2 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
             title="Rotate"
           >
-            <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-4 h-4" />
           </button>
           
           <button
             onClick={handleReset}
-            className="p-3 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
+            className="p-2 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
             title="Reset"
           >
-            <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-4 h-4" />
           </button>
           
           <button
             onClick={() => handleZoom(0.2)}
-            className="p-3 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
+            className="p-2 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
             title="Zoom In"
           >
-            <ZoomIn className="w-5 h-5" />
+            <ZoomIn className="w-4 h-4" />
           </button>
         </div>
         
         {/* Capture Button */}
-        <div className="flex justify-center mt-4">
+        <div className="flex justify-center mb-2">
           <button
             onClick={handleCapture}
             disabled={isCapturing}
-            className="bg-dgreen hover:bg-dgreen/90 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+            className="bg-dgreen hover:bg-dgreen/90 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2 text-sm"
           >
-            <Camera className="w-5 h-5" />
-            <span>{isCapturing ? 'Capturing...' : 'Capture AR View'}</span>
+            <Camera className="w-4 h-4" />
+            <span>{isCapturing ? 'Capturing...' : 'Capture'}</span>
           </button>
         </div>
         
-        <div className="text-center mt-2">
-          <p className="text-sm text-gray-300">
-            Drag to move • Pinch to zoom • Tap to rotate • Capture to save
+        <div className="text-center">
+          <p className="text-xs text-gray-300">
+            Drag to move • Pinch to zoom • Tap to rotate
           </p>
         </div>
       </div>
