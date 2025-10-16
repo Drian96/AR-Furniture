@@ -14,6 +14,8 @@ import UserProfile from './pages/UserProfile';
 import Admin from './pages/AdminDashboard';
 import AdminProfile from './pages/AdminProfile';
 import AdminSystemSettingsPage from './pages/AdminSystemSettings';
+import ForgotPassword from './pages/ForgotPassword.tsx';
+import Terms from './pages/Terms.tsx';
 
 const App = () => {
   return (
@@ -23,6 +25,8 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/products" element={<Products />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />

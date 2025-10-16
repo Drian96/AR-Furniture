@@ -3,8 +3,8 @@ import {
   Shield, // For Security
   Settings, // For Settings
   LogOut,
-  // Removed unused icons: LayoutDashboard, Package, BarChart3, Eye, Users, UserCog, MessageSquare, Star, FileText, ShoppingCart, MapPin
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Interface for admin sidebar component props
 interface AdminSidebarProps {
@@ -13,6 +13,7 @@ interface AdminSidebarProps {
 }
 
 const AdminProfileSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) => {
+  const { user, logout } = useAuth();
   // Admin navigation items configuration tailored for AdminProfile sections
   const role = sessionStorage.getItem('lastLoginRole');
   const isAdmin = role === 'admin';
@@ -23,19 +24,10 @@ const AdminProfileSidebar = ({ activeSection, setActiveSection }: AdminSidebarPr
     ...(isAdmin ? [{ id: 'settings', label: 'Settings', icon: Settings }] : []),
   ];
 
-  // TODO: When backend is connected, fetch admin data from your Express API
-  const mockAdminData = {
-    name: "Admin User", // TODO: Replace with actual admin name from backend
-    email: "admin@shop.com", // TODO: Replace with actual admin email from auth
-    role: "Administrator" // TODO: Get admin role from JWT token
-  };
+  const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : 'User';
+  const displayRole = user?.role === 'admin' ? 'Administrator' : (user?.role || 'Staff');
 
-  // TODO: When backend is ready, implement proper logout functionality
-  const handleLogout = () => {
-    // TODO: Clear admin session/token and redirect to login
-    console.log('Admin logout clicked');
-    // Example: navigate('/login'); // If you have react-router-dom navigate hook
-  };
+  const handleLogout = () => { logout(); };
 
   return (
     <div className="w-64 bg-lgreen rounded-lg p-6 h-fit">
@@ -45,13 +37,11 @@ const AdminProfileSidebar = ({ activeSection, setActiveSection }: AdminSidebarPr
           {/* Changed icon from UserCog to User for a personal profile feel */}
           <User className="w-10 h-10 text-dgreen" />
         </div>
-        {/* Admin Name - TODO: Get from JWT token or admin session */}
-        <h3 className="text-dgreen font-semibold">{mockAdminData.name}</h3>
-        {/* Admin Email - TODO: Get from authenticated admin data */}
-        <p className="text-dgray text-sm">{mockAdminData.email}</p>
+        <h3 className="text-dgreen font-semibold">{displayName}</h3>
+        <p className="text-dgray text-sm">{user?.email || ''}</p>
         {/* Admin Role Badge */}
         <span className="inline-block bg-dgreen text-cream text-xs px-2 py-1 rounded-full mt-1">
-          {mockAdminData.role}
+          {displayRole}
         </span>
       </div>
 

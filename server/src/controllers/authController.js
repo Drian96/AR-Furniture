@@ -523,12 +523,8 @@ const verifyCode = async (req, res) => {
       });
     }
 
-    // Code is valid, remove it from database
-    await sequelize.query(
-      'DELETE FROM verification_codes WHERE email = :email',
-      { replacements: { email }, type: QueryTypes.DELETE }
-    );
-
+    // Code is valid. Do not delete here so it can be used by subsequent flows
+    // like password reset. It will be deleted upon successful reset or when expired.
     console.log('✅ Verification code verified successfully for:', email);
     return res.json({ 
       success: true, 
@@ -544,6 +540,79 @@ const verifyCode = async (req, res) => {
   }
 };
 
+/**
+ * Reset Password Controller
+ * Allows a user to reset their password after verifying a code sent to email
+ *
+ * Expected body: { email: string, code: string, newPassword: string }
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, code and newPassword are required.'
+      });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: passwordValidation.error
+      });
+    }
+
+    // Check verification code validity (not expired)
+    const codeRows = await sequelize.query(
+      `SELECT * FROM verification_codes 
+       WHERE email = :email AND code = :code AND expires_at > NOW()`,
+      {
+        replacements: { email, code },
+        type: QueryTypes.SELECT
+      }
+    );
+
+    if (codeRows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code.'
+      });
+    }
+
+    // Find the user by email
+    const user = await User.findOne({ where: { email: email.toLowerCase() } });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found.'
+      });
+    }
+
+    // Hash and update the new password
+    const hashed = await hashPassword(newPassword);
+    await user.update({ password_hash: hashed });
+
+    // Remove any verification codes for this email
+    await sequelize.query('DELETE FROM verification_codes WHERE email = :email', {
+      replacements: { email },
+      type: QueryTypes.DELETE
+    });
+
+    console.log('✅ Password reset successfully for:', email);
+    return res.json({ success: true, message: 'Password reset successfully.' });
+  } catch (error) {
+    console.error('❌ Error resetting password:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to reset password.'
+    });
+  }
+};
+
 // Export all controller functions
 module.exports = {
   register,      // User registration
@@ -553,5 +622,6 @@ module.exports = {
   changePassword, // Change password
   logout,         // User logout
   sendVerificationCode, // Send verification code
-  verifyCode     // Verify verification code
+  verifyCode,     // Verify verification code
+  resetPassword   // Reset password with code
 };

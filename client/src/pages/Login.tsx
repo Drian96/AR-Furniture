@@ -156,9 +156,9 @@ const Login: React.FC = () => {
           </button>
         </form>
         <div className="text-center mt-4">
-          <a href="#" className="text-sm text-gray-900 hover:text-dgreen hover:underline transition-colors duration-200">
+          <Link to="/forgot-password" className="text-sm text-gray-900 hover:text-dgreen hover:underline transition-colors duration-200">
             Forgot password?
-          </a>
+          </Link>
         </div>
         <div className="relative flex items-center py-5">
           <div className="flex-grow border-t border-gray-300"></div>

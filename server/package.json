@@ -9,6 +9,7 @@
     "client": "cd ../client && npm run dev",
     "server": "nodemon server.js",
     "both": "concurrently \"npm run server\" \"npm run client\"",
+    "setup-audit-logs": "node src/scripts/setup-audit-logs.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

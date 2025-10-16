@@ -11,13 +11,15 @@ const {
   changePassword,
   logout,
   sendVerificationCode,
-  verifyCode
+  verifyCode,
+  resetPassword
 } = require('../controllers/authController');
 
 // Import authentication middleware
 const {
   authenticateToken,
-  requireCustomer
+  requireCustomer,
+  requireStaff
 } = require('../middleware/auth');
 
 // Import validation middleware
@@ -105,7 +107,8 @@ router.post('/login', loginValidation, login);
  * - authenticateToken: Verifies JWT token and attaches user to req.user
  * - requireCustomer: Ensures only customers can access this route
  */
-router.get('/profile', authenticateToken, requireCustomer, getProfile);
+// Allow staff (admin, manager, staff) to access profile
+router.get('/profile', authenticateToken, requireStaff, getProfile);
 
 /**
  * PUT /api/auth/profile
@@ -141,7 +144,7 @@ router.get('/profile', authenticateToken, requireCustomer, getProfile);
  */
 router.put('/profile', 
   authenticateToken, 
-  requireCustomer, 
+  requireStaff, 
   profileUpdateValidation, 
   updateProfile
 );
@@ -300,6 +303,13 @@ router.post('/send-verification-code', sendVerificationCode);
  * }
  */
 router.post('/verify-code', verifyCode);
+
+/**
+ * POST /api/v1/auth/reset-password
+ * Reset password using email, verification code, and new password
+ * Body: { email, code, newPassword }
+ */
+router.post('/reset-password', resetPassword);
 
 // Export the router
 module.exports = router;

@@ -275,23 +275,23 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col h-screen">
+    <div className="fixed inset-0 z-50 flex h-screen">
       {/* Header */}
-      <div className="text-white p-3 flex items-center justify-between flex-shrink-0">
+      <div className="absolute top-0 left-0 right-0 text-white p-3 flex items-center justify-between z-10">
         <div>
           <h2 className="text-lg font-semibold">AR Preview</h2>
           <p className="text-sm text-gray-300">{productName}</p>
         </div>
         <button
           onClick={onClose}
-          className="p-2 hover:bg-white hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+          className="p-2 hover:bg-white/20 rounded-full transition-colors cursor-pointer bg-black/50"
         >
           <X className="w-6 h-6" />
         </button>
       </div>
 
       {/* Camera View */}
-      <div className="flex-1 relative min-h-0">
+      <div className="flex-1 relative min-h-0 w-full">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black">
             <div className="text-center text-white">
@@ -333,59 +333,58 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
         />
       </div>
 
-      {/* Controls */}
-      <div className="bg-black/75 text-white p-3 flex-shrink-0">
-        <div className="flex items-center justify-center space-x-2 mb-3">
+      {/* Controls - Right Side */}
+      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 text-white p-3 z-10">
+        <div className="flex flex-col items-center space-y-3">
           <button
-            onClick={() => handleZoom(-0.2)}
-            className="p-2 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
-            title="Zoom Out"
+            onClick={() => handleZoom(0.2)}
+            className="p-3 hover:bg-white/20 rounded-full transition-colors cursor-pointer bg-black/50"
+            title="Zoom In"
           >
-            <ZoomOut className="w-4 h-4" />
+            <ZoomIn className="w-5 h-5" />
           </button>
           
           <button
             onClick={handleRotate}
-            className="p-2 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
+            className="p-3 hover:bg-white/20 rounded-full transition-colors cursor-pointer bg-black/50"
             title="Rotate"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-5 h-5" />
           </button>
           
           <button
             onClick={handleReset}
-            className="p-2 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
+            className="p-3 hover:bg-white/20 rounded-full transition-colors cursor-pointer bg-black/50"
             title="Reset"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-5 h-5" />
           </button>
           
           <button
-            onClick={() => handleZoom(0.2)}
-            className="p-2 hover:bg-white hover:bg-white/70 rounded-full transition-colors cursor-pointer"
-            title="Zoom In"
+            onClick={() => handleZoom(-0.2)}
+            className="p-3 hover:bg-white/20 rounded-full transition-colors cursor-pointer bg-black/50"
+            title="Zoom Out"
           >
-            <ZoomIn className="w-4 h-4" />
+            <ZoomOut className="w-5 h-5" />
           </button>
-        </div>
-        
-        {/* Capture Button */}
-        <div className="flex justify-center mb-2">
+          
+          {/* Capture Button */}
           <button
             onClick={handleCapture}
             disabled={isCapturing}
-            className="bg-dgreen hover:bg-dgreen/90 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2 text-sm"
+            className="bg-dgreen hover:bg-dgreen/90 disabled:bg-gray-500 disabled:cursor-not-allowed text-white p-3 rounded-full font-semibold transition-colors flex items-center justify-center"
+            title="Capture"
           >
-            <Camera className="w-4 h-4" />
-            <span>{isCapturing ? 'Capturing...' : 'Capture'}</span>
+            <Camera className="w-5 h-5" />
           </button>
         </div>
-        
-        <div className="text-center">
-          <p className="text-xs text-gray-300">
-            Drag to move • Pinch to zoom • Tap to rotate
-          </p>
-        </div>
+      </div>
+
+      {/* Instructions - Bottom Left */}
+      <div className="absolute bottom-4 left-4 text-white z-10">
+        <p className="text-xs text-gray-300 bg-black/50 px-3 py-2 rounded-lg">
+          Drag to move • Pinch to zoom • Tap to rotate
+        </p>
       </div>
     </div>
   );

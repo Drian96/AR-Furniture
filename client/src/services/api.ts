@@ -357,6 +357,19 @@ export const verifyCode = async (email: string, code: string): Promise<ApiRespon
   });
 };
 
+/**
+ * Reset a user's password using email + verification code
+ * @param email - The user's email
+ * @param code - The verification code
+ * @param newPassword - The new password to set
+ */
+export const resetPassword = async (email: string, code: string, newPassword: string): Promise<ApiResponse> => {
+  return await apiRequest<ApiResponse>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email, code, newPassword })
+  });
+};
+
 // ============================================================================
 // HEALTH CHECK
 // Function to check if API is running

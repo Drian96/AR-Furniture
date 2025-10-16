@@ -1,4 +1,6 @@
 import React, { useState, type FormEvent, type ChangeEvent } from 'react';
+import { Eye, EyeOff, Lock, CheckSquare } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useSignup } from './SignUpContext';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -21,6 +23,9 @@ const CompleteRegistration: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirm, setShowConfirm] = useState<boolean>(false);
+  const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   
   // Debug: Log when modal state changes
   React.useEffect(() => {
@@ -50,9 +55,24 @@ const CompleteRegistration: React.FC = () => {
     setLoading(true);
     setError('');
 
+    // Validate terms acceptance and passwords match
+    if (!acceptedTerms) {
+      setError('You must accept the Terms & Conditions');
+      setLoading(false);
+      return;
+    }
+
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // Validate password strength to match server rules
+    const strongPwd = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!strongPwd.test(formData.password)) {
+      setError('Password must be 8+ chars and include upper, lower, and number');
       setLoading(false);
       return;
     }
@@ -125,32 +145,58 @@ const CompleteRegistration: React.FC = () => {
           <label className="block text-dgray text-sm font-bold mb-2">
             Password
           </label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-dgreen"
-            placeholder="Create a password"
-            minLength={6}
-            required
-          />
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-dgreen"
+              placeholder="Create a password"
+              minLength={6}
+              required
+            />
+            <button type="button" onClick={() => setShowPassword(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="block text-dgray text-sm font-bold mb-2">
             Confirm Password
           </label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type={showConfirm ? 'text' : 'password'}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-dgreen"
+              placeholder="Confirm your password"
+              minLength={6}
+              required
+            />
+            <button type="button" onClick={() => setShowConfirm(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-6 flex items-start">
           <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-dgreen"
-            placeholder="Confirm your password"
-            minLength={6}
+            id="terms"
+            type="checkbox"
+            className="mt-1 mr-2 h-4 w-4 border-gray-300 rounded"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
             required
           />
+          <label htmlFor="terms" className="text-sm text-dgray">
+            I agree to the <Link to="/terms" className="text-dgreen hover:underline">Terms & Conditions</Link>
+          </label>
         </div>
 
         {error && (
@@ -169,7 +215,7 @@ const CompleteRegistration: React.FC = () => {
 
     {/* Success Modal */}
     {showSuccessModal && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
           <div className="mb-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
