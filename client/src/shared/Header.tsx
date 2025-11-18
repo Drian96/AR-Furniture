@@ -432,7 +432,7 @@ const Header = () => {
                   className="text-dgreen hover:text-lgreen transition-colors p-2 rounded-full border border-lgreen"
                   title={user?.firstName ? `${user.firstName} ${user.lastName}` : 'Profile'}
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-5 h-5 cursor-pointer" />
                 </button>
                 
                 {/* Mobile Profile Dropdown */}

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { orderService } from '../services/supabase';
-import { getUserAddresses, Address } from '../services/api';
+import { getUserAddresses, Address, createOrder, type CreateOrderRequest, type OrderItem } from '../services/api';
 import Header from '../shared/Header';
 import Footer from '../shared/Footer';
 
@@ -146,8 +145,11 @@ const Checkout = () => {
         postal_code: formData.postalCode,
         notes: formData.notes
       } : {
-        first_name: selectedAddress!.recipient_name,
-        last_name: '', // Address doesn't have separate last name
+        // Split recipient_name into first and last name (if it contains a space, otherwise use full name as first name)
+        first_name: selectedAddress!.recipient_name.split(' ')[0] || selectedAddress!.recipient_name,
+        last_name: selectedAddress!.recipient_name.includes(' ') 
+          ? selectedAddress!.recipient_name.split(' ').slice(1).join(' ') 
+          : user.lastName || 'Customer', // Fallback to user's last name or default
         email: user.email,
         phone: selectedAddress!.phone || user.phone || '',
         address: `${selectedAddress!.street_address}, ${selectedAddress!.barangay}, ${selectedAddress!.city}, ${selectedAddress!.province}, ${selectedAddress!.region}`,
@@ -156,20 +158,27 @@ const Checkout = () => {
         notes: formData.notes
       };
       
-      const orderData = {
+      const orderData: CreateOrderRequest = {
         user_id: user.id,
-        ...deliveryInfo,
-        payment_method: 'cash_on_delivery',
         total_amount: total,
+        first_name: deliveryInfo.first_name,
+        last_name: deliveryInfo.last_name,
+        email: deliveryInfo.email,
+        phone: deliveryInfo.phone,
+        address: deliveryInfo.address,
+        city: deliveryInfo.city,
+        postal_code: deliveryInfo.postal_code,
+        notes: deliveryInfo.notes || '',
+        payment_method: 'cash_on_delivery',
         items: cartItems.map((item: any) => ({
-          product_id: item.productId, // Keep as string (UUID)
+          product_id: item.productId,
           quantity: item.quantity,
           price: item.price
         }))
       };
       
       // Create order in database
-      const order = await orderService.createOrder(orderData);
+      const order = await createOrder(orderData);
       setOrderId(order.order_number);
       
       // Clear cart after successful order

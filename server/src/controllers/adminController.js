@@ -152,6 +152,39 @@ exports.getReports = async (req, res) => {
       { type: QueryTypes.SELECT }
     );
 
+    // Revenue trend data based on period
+    let revenueTrend = [];
+    let dateFormat = 'YYYY-MM-DD';
+    let groupBy = 'DATE(created_at)';
+    
+    if (period === 'week') {
+      dateFormat = 'YYYY-"W"WW';
+      groupBy = 'DATE_TRUNC(\'week\', created_at)';
+    } else if (period === 'month') {
+      dateFormat = 'YYYY-MM';
+      groupBy = 'DATE_TRUNC(\'month\', created_at)';
+    } else if (period === 'year') {
+      dateFormat = 'YYYY';
+      groupBy = 'DATE_TRUNC(\'year\', created_at)';
+    }
+
+    // Get trend data for the specified period
+    const trendData = await sequelize.query(
+      `SELECT TO_CHAR(${groupBy}, '${dateFormat}') AS period,
+              COALESCE(SUM(total_amount),0)::numeric AS revenue
+         FROM public.orders
+        WHERE ${whereClause}
+        GROUP BY ${groupBy}
+        ORDER BY ${groupBy}`,
+      { type: QueryTypes.SELECT }
+    );
+
+    // Fill in missing periods with 0 revenue for better visualization
+    revenueTrend = trendData.map(item => ({
+      period: item.period,
+      revenue: parseFloat(item.revenue)
+    }));
+
     // Simple derived metrics placeholders
     const report = {
       totalRevenue: revenueRow.total_revenue,
@@ -162,6 +195,7 @@ exports.getReports = async (req, res) => {
       avgOrderSize: avgOrderRow.avg_order_value, // proxy if no items count
       category,
       topProducts,
+      revenueTrend,
     };
 
     return res.json({ success: true, data: report });
@@ -214,6 +248,93 @@ exports.getAuditLogs = async (req, res) => {
   } catch (error) {
     console.error('Admin getAuditLogs error:', error);
     return res.status(500).json({ success: false, message: 'Failed to load audit logs' });
+  }
+};
+
+// GET /admin/customer/:id/orders
+exports.getCustomerOrders = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`🔄 Fetching orders for customer ${id}...`);
+
+    // Get customer order statistics
+    const [customerStats] = await sequelize.query(
+      `SELECT 
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        COUNT(o.id) AS total_orders,
+        COALESCE(SUM(o.total_amount), 0)::numeric AS total_spent,
+        MAX(o.created_at) AS last_order_date
+      FROM public.users u
+      LEFT JOIN public.orders o ON o.user_id = u.id
+      WHERE u.id = :id AND u.role = 'customer'
+      GROUP BY u.id, u.first_name, u.last_name, u.email`,
+      { 
+        type: QueryTypes.SELECT,
+        replacements: { id }
+      }
+    );
+
+    if (!customerStats) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found'
+      });
+    }
+
+    // Get recent orders (last 10)
+    const recentOrders = await sequelize.query(
+      `SELECT 
+        o.id,
+        o.order_number,
+        o.total_amount,
+        o.status,
+        o.created_at,
+        COUNT(oi.id) AS item_count
+      FROM public.orders o
+      LEFT JOIN public.order_items oi ON oi.order_id = o.id
+      WHERE o.user_id = :id
+      GROUP BY o.id, o.order_number, o.total_amount, o.status, o.created_at
+      ORDER BY o.created_at DESC
+      LIMIT 10`,
+      { 
+        type: QueryTypes.SELECT,
+        replacements: { id }
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        customer: {
+          id: customerStats.id,
+          name: `${customerStats.first_name} ${customerStats.last_name}`,
+          email: customerStats.email,
+          totalOrders: parseInt(customerStats.total_orders),
+          totalSpent: parseFloat(customerStats.total_spent),
+          lastOrderDate: customerStats.last_order_date
+        },
+        recentOrders: recentOrders.map(order => ({
+          id: order.id,
+          orderNumber: order.order_number,
+          totalAmount: parseFloat(order.total_amount),
+          status: order.status,
+          itemCount: parseInt(order.item_count),
+          createdAt: order.created_at
+        }))
+      }
+    });
+
+    console.log(`✅ Retrieved customer orders for: ${customerStats.first_name} ${customerStats.last_name}`);
+
+  } catch (error) {
+    console.error('❌ Get customer orders error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch customer orders'
+    });
   }
 };
 

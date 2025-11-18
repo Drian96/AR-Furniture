@@ -160,14 +160,14 @@ const Security = () => {
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
-                className="flex-1 px-4 py-2 border border-sage-light text-dgray rounded-lg hover:bg-sage-light transition-colors"
+                className="flex-1 px-4 py-2 border border-lgray text-dgray rounded-lg hover:border-dgray cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={confirmChange}
-                className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-opacity-90 transition-colors"
+                className="flex-1 px-4 py-2 bg-dgreen text-cream rounded-lg hover:bg-lgreen cursor-pointer"
               >
                 Confirm
               </button>

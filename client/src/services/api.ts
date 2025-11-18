@@ -446,12 +446,193 @@ export interface AdminReportsResponse {
   avgOrderSize: number | null;
   category: Array<{ category: string; percentage: number }>;
   topProducts: Array<{ name: string; sales: number; revenue: string }>;
+  revenueTrend: Array<{ period: string; revenue: number }>;
 }
 
 export const getAdminReports = async (period: 'day' | 'week' | 'month' | 'year' = 'month'): Promise<AdminReportsResponse> => {
   const response = await apiRequest<AdminReportsResponse>(`/admin/reports?period=${period}`);
   if (response.success && response.data) return response.data;
   throw new Error(response.message || 'Failed to load reports');
+};
+
+// =========================
+// Product management types and functions
+// =========================
+export interface Product {
+  id: number;
+  name: string;
+  code?: string;
+  category: string;
+  supplier: string;
+  price: number;
+  quantity: number;
+  min_stock: number;
+  description?: string;
+  status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NewProductData {
+  name: string;
+  code?: string;
+  category: string;
+  supplier: string;
+  price: number;
+  quantity: number;
+  min_stock?: number;
+  description?: string;
+}
+
+export const getProducts = async (): Promise<Product[]> => {
+  const response = await apiRequest<Product[]>('/products');
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to load products');
+};
+
+export const getProductById = async (id: number): Promise<Product> => {
+  const response = await apiRequest<Product>(`/products/${id}`);
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to load product');
+};
+
+export const createProduct = async (productData: NewProductData): Promise<Product> => {
+  const response = await apiRequest<Product>('/products', {
+    method: 'POST',
+    body: JSON.stringify(productData)
+  });
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to create product');
+};
+
+export const updateProduct = async (id: number, productData: NewProductData): Promise<Product> => {
+  const response = await apiRequest<Product>(`/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(productData)
+  });
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to update product');
+};
+
+export const deleteProduct = async (id: number): Promise<void> => {
+  const response = await apiRequest(`/products/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to delete product');
+  }
+};
+
+export const updateProductStock = async (id: number, quantity: number): Promise<Product> => {
+  const response = await apiRequest<Product>(`/products/${id}/stock`, {
+    method: 'PUT',
+    body: JSON.stringify({ quantity })
+  });
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to update stock');
+};
+
+// =========================
+// Customer order statistics types and functions
+// =========================
+export interface CustomerOrderStats {
+  customer: {
+    id: number;
+    name: string;
+    email: string;
+    totalOrders: number;
+    totalSpent: number;
+    lastOrderDate?: string;
+  };
+  recentOrders: Array<{
+    id: number;
+    orderNumber: string;
+    totalAmount: number;
+    status: string;
+    itemCount: number;
+    createdAt: string;
+  }>;
+}
+
+export const getCustomerOrders = async (customerId: number): Promise<CustomerOrderStats> => {
+  const response = await apiRequest<CustomerOrderStats>(`/admin/customer/${customerId}/orders`);
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to load customer orders');
+};
+
+// =========================
+// Order management types and functions
+// =========================
+export interface OrderItem {
+  product_id: number;
+  quantity: number;
+  price: number;
+}
+
+export interface CreateOrderRequest {
+  user_id: number;
+  items: OrderItem[];
+  total_amount: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postal_code: string;
+  notes?: string;
+  payment_method?: string;
+}
+
+export interface Order {
+  id: number;
+  order_number: string;
+  total_amount: number;
+  status: string;
+  shipping_address?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderWithItems extends Order {
+  items: Array<{
+    id: number;
+    product_id: number;
+    quantity: number;
+    price: number;
+    product_name: string;
+    product_category: string;
+  }>;
+}
+
+export const createOrder = async (orderData: CreateOrderRequest): Promise<Order> => {
+  const response = await apiRequest<Order>('/orders', {
+    method: 'POST',
+    body: JSON.stringify(orderData)
+  });
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to create order');
+};
+
+export const getUserOrders = async (userId: number): Promise<Order[]> => {
+  const response = await apiRequest<Order[]>(`/orders/user/${userId}`);
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to load user orders');
+};
+
+export const getOrderById = async (orderId: number): Promise<OrderWithItems> => {
+  const response = await apiRequest<OrderWithItems>(`/orders/${orderId}`);
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to load order');
+};
+
+export const updateOrderStatus = async (orderId: number, status: string): Promise<Order> => {
+  const response = await apiRequest<Order>(`/orders/${orderId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status })
+  });
+  if (response.success && response.data) return response.data;
+  throw new Error(response.message || 'Failed to update order status');
 };
 
 export interface AuditLogItem {

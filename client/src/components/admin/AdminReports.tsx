@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, Users, Package } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getAdminReports, AdminReportsResponse } from '../../services/api';
 
 // Reports and analytics component for admin
@@ -78,17 +79,58 @@ const AdminReports = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Trend Chart Placeholder */}
-        {/* TODO: When backend is ready, implement actual chart with real data */}
+        {/* Revenue Trend Chart */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-sage-light">
           <h3 className="text-lg font-semibold text-dgreen mb-4">Revenue Trend</h3>
-          <div className="h-64 bg-cream rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <BarChart3 className="w-12 h-12 text-sage-medium mx-auto mb-2" />
-              <p className="text-dgray">Chart will be implemented with real data</p>
-              <p className="text-sm text-dgray">TODO: Connect to analytics API</p>
+          {data?.revenueTrend && data.revenueTrend.length > 0 ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.revenueTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="period" 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `₱${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => [`₱${value.toLocaleString()}`, 'Revenue']}
+                    labelStyle={{ color: '#374151' }}
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#10b981" 
+                    strokeWidth={3}
+                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-          </div>
+          ) : (
+            <div className="h-64 bg-cream rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <BarChart3 className="w-12 h-12 text-sage-medium mx-auto mb-2" />
+                <p className="text-dgray">No revenue data available</p>
+                <p className="text-sm text-dgray">Data will appear once orders are placed</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Category Distribution */}

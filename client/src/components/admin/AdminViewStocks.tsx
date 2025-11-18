@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, X } from 'lucide-react';
-import { productService, supabase, PRODUCT_IMAGES_BUCKET, ensureStorageAuth, type NewProductData, type Product, type ProductImage } from '../../services/supabase';
+import { getProducts, createProduct, updateProduct, deleteProduct, type Product, type NewProductData } from '../../services/api';
+import { productService, supabase, PRODUCT_IMAGES_BUCKET, ensureStorageAuth, type ProductImage } from '../../services/supabase';
 
 // Stock management component for admin
 // TODO: When backend is connected, fetch real inventory data from your Express API
@@ -77,18 +78,23 @@ const AdminViewStocks = () => {
     return editForm.images.map((file) => URL.createObjectURL(file));
   }, [editForm.images]);
 
-  // Fetch products from Supabase
+  // Fetch products from backend API and images from Supabase
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      const fetchedProducts = await productService.getProducts();
+      const fetchedProducts = await getProducts();
       setProducts(fetchedProducts);
       
-      // Fetch images for each product
+      // Fetch images for each product from Supabase
       const imagesMap: Record<string, ProductImage[]> = {};
       for (const product of fetchedProducts) {
-        const images = await productService.getProductImages(product.id);
-        imagesMap[product.id] = images;
+        try {
+          const images = await productService.getProductImages(product.id.toString());
+          imagesMap[product.id] = images;
+        } catch (error) {
+          console.error(`Failed to fetch images for product ${product.id}:`, error);
+          imagesMap[product.id] = [];
+        }
       }
       setProductImages(imagesMap);
     } catch (error) {
@@ -184,6 +190,7 @@ const AdminViewStocks = () => {
     }));
   };
 
+
   // Calculate real inventory stats from products
   const inventoryStats = useMemo(() => {
     const totalValue = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
@@ -211,18 +218,30 @@ const AdminViewStocks = () => {
     });
   }, [products, searchTerm, selectedCategory, selectedStatus]);
 
-  // TODO: When backend is ready, implement actual item creation
+  // Create new product
   const handleAddItem = async (formData: NewProductData, imageFiles: File[]) => {
     try {
       setIsSubmitting(true);
-    console.log('Adding new item:', formData);
+      console.log('Adding new item:', formData);
       
-      // Create product in Supabase
-      const result = await productService.createProduct(formData, imageFiles);
+      // Create product via backend API
+      const result = await createProduct(formData);
       console.log('✅ Product created successfully:', result);
       
+      // If there are images, upload them to Supabase
+      if (imageFiles.length > 0) {
+        try {
+          await ensureStorageAuth();
+          await productService.uploadProductImages(result.id.toString(), imageFiles, 0);
+          console.log('✅ Images uploaded successfully');
+        } catch (imageError) {
+          console.error('❌ Failed to upload images:', imageError);
+          // Don't fail the entire operation if image upload fails
+        }
+      }
+      
       // Close modals and reset form
-    setShowAddItemModal(false);
+      setShowAddItemModal(false);
       setShowAddConfirm(false);
       resetAddForm();
       
@@ -231,7 +250,6 @@ const AdminViewStocks = () => {
       
     } catch (error) {
       console.error('❌ Failed to create product:', error);
-      // TODO: Show error message to user (you can add a toast notification here)
       alert('Failed to create product. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -267,14 +285,14 @@ const AdminViewStocks = () => {
     if (!selectedItem) return;
     
     try {
-      await productService.deleteProduct(selectedItem.id);
+      await deleteProduct(selectedItem.id);
       console.log('✅ Product deleted successfully');
       
       // Refresh the products list
       await fetchProducts();
       
-    setShowDeleteConfirm(false);
-    setSelectedItem(null);
+      setShowDeleteConfirm(false);
+      setSelectedItem(null);
     } catch (error) {
       console.error('❌ Failed to delete product:', error);
       alert('Failed to delete product. Please try again.');
@@ -287,21 +305,33 @@ const AdminViewStocks = () => {
     try {
       setIsUpdating(true);
       
-      // Update product data
-      const updatedProduct = await productService.updateProduct(selectedItem.id, formData);
+      // Update product data via backend API
+      const updatedProduct = await updateProduct(selectedItem.id, formData);
       
-      // If there are new images, upload them
+      // If there are new images, upload them to Supabase
       if (imageFiles.length > 0) {
-        const existingImages = productImages[selectedItem.id] || [];
-        await ensureStorageAuth();
-        await productService.uploadProductImages(selectedItem.id, imageFiles, existingImages.length);
+        try {
+          const existingImages = productImages[selectedItem.id] || [];
+          await ensureStorageAuth();
+          await productService.uploadProductImages(selectedItem.id.toString(), imageFiles, existingImages.length);
+          console.log('✅ New images uploaded successfully');
+        } catch (imageError) {
+          console.error('❌ Failed to upload new images:', imageError);
+          // Don't fail the entire operation if image upload fails
+        }
       }
 
-      // Apply deletions for images flagged during edit (after update/upload)
+      // Apply deletions for images flagged during edit
       if (removedImageIds.length > 0) {
-        const imagesToDelete = (productImages[selectedItem.id] || []).filter(img => removedImageIds.includes(img.id));
-        for (const img of imagesToDelete) {
-          await productService.deleteProductImage(img);
+        try {
+          const imagesToDelete = (productImages[selectedItem.id] || []).filter(img => removedImageIds.includes(img.id));
+          for (const img of imagesToDelete) {
+            await productService.deleteProductImage(img);
+          }
+          console.log('✅ Removed images deleted successfully');
+        } catch (imageError) {
+          console.error('❌ Failed to delete removed images:', imageError);
+          // Don't fail the entire operation if image deletion fails
         }
       }
       
@@ -570,6 +600,7 @@ const AdminViewStocks = () => {
                 {formErrors.minStock && <p className="text-xs text-red-600 mt-1">{formErrors.minStock}</p>}
               </div>
 
+
               {/* Images upload */}
               <div>
                 <label className="block text-sm font-medium text-dgreen mb-1">Product Images</label>
@@ -742,6 +773,7 @@ const AdminViewStocks = () => {
                 {editFormErrors.minStock && <p className="text-xs text-red-600 mt-1">{editFormErrors.minStock}</p>}
               </div>
 
+
               {/* Existing Images Display */}
               {productImages[selectedItem.id] && productImages[selectedItem.id].length > 0 && (
                 <div>
@@ -781,7 +813,7 @@ const AdminViewStocks = () => {
                   accept="image/*"
                   multiple
                   onChange={(e) => handleEditImageChange(e.target.files)}
-                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sage-light file:text-dgreen"
+                  className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sage-light file:text-dgreen cursor-pointer"
                 />
                 {editImagePreviews.length > 0 && (
                   <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">

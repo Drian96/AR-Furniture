@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Eye, Edit, Trash2, X, CheckCircle, MapPin } from 'lucide-react';
-import { adminListUsers, adminUpdateUser, adminDeleteUser, getAddressesByUserId } from '../../services/api';
+import { adminListUsers, adminUpdateUser, adminDeleteUser, getAddressesByUserId, getCustomerOrders } from '../../services/api';
 
 // Customer management component for admin
 const AdminCustomer = () => {
@@ -15,6 +15,8 @@ const AdminCustomer = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [customerOrderStats, setCustomerOrderStats] = useState<any>(null);
+  const [loadingOrderStats, setLoadingOrderStats] = useState(false);
 
   // Edit customer form state
   const [editCustomer, setEditCustomer] = useState({
@@ -41,9 +43,9 @@ const AdminCustomer = () => {
           email: u.email,
           phone: u.phone || 'N/A',
           address: 'N/A', // Address field not available in current User model
-          orders: 0, // Orders field not available in current User model
-          totalSpent: '₱0', // Total spent field not available in current User model
-          lastOrder: 'N/A', // Last order field not available in current User model
+          orders: 'Loading...', // Will be updated when viewing customer details
+          totalSpent: 'Loading...', // Will be updated when viewing customer details
+          lastOrder: 'Loading...', // Will be updated when viewing customer details
           status: (u.status || 'active').charAt(0).toUpperCase() + (u.status || 'active').slice(1),
           firstName: u.firstName || u.first_name,
           lastName: u.lastName || u.last_name
@@ -68,7 +70,7 @@ const AdminCustomer = () => {
     return matchesSearch;
   });
 
-  // Fetch customer details including addresses
+  // Fetch customer details including addresses and order statistics
   const handleViewCustomer = async (customer: any) => {
     setSelectedCustomer(customer);
     setShowCustomerDetails(true);
@@ -83,6 +85,18 @@ const AdminCustomer = () => {
       setCustomerAddresses([]);
     } finally {
       setLoadingAddresses(false);
+    }
+
+    // Fetch customer order statistics
+    try {
+      setLoadingOrderStats(true);
+      const orderStats = await getCustomerOrders(customer.id);
+      setCustomerOrderStats(orderStats);
+    } catch (error) {
+      console.error('Failed to load customer order statistics:', error);
+      setCustomerOrderStats(null);
+    } finally {
+      setLoadingOrderStats(false);
     }
   };
 
@@ -339,10 +353,23 @@ const AdminCustomer = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-dgreen mb-2">Order Statistics</h3>
-                  <p className="text-sm text-dgray mb-1">Total Orders: {selectedCustomer.orders}</p>
-                  <p className="text-sm text-dgray mb-1">Total Spent: {selectedCustomer.totalSpent}</p>
-                  <p className="text-sm text-dgray mb-1">Last Order: {selectedCustomer.lastOrder}</p>
-                  <p className="text-sm text-dgray">Customer ID: {selectedCustomer.id}</p>
+                  {loadingOrderStats ? (
+                    <p className="text-sm text-dgray">Loading order statistics...</p>
+                  ) : customerOrderStats ? (
+                    <>
+                      <p className="text-sm text-dgray mb-1">Total Orders: {customerOrderStats.customer.totalOrders}</p>
+                      <p className="text-sm text-dgray mb-1">Total Spent: ₱{customerOrderStats.customer.totalSpent.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-sm text-dgray mb-1">Last Order: {customerOrderStats.customer.lastOrderDate ? new Date(customerOrderStats.customer.lastOrderDate).toLocaleDateString() : 'No orders yet'}</p>
+                      <p className="text-sm text-dgray">Customer ID: {selectedCustomer.id}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-dgray mb-1">Total Orders: 0</p>
+                      <p className="text-sm text-dgray mb-1">Total Spent: ₱0.00</p>
+                      <p className="text-sm text-dgray mb-1">Last Order: No orders yet</p>
+                      <p className="text-sm text-dgray">Customer ID: {selectedCustomer.id}</p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -397,8 +424,33 @@ const AdminCustomer = () => {
               <div>
                 <h3 className="font-semibold text-dgreen mb-2">Recent Orders</h3>
                 <div className="bg-cream rounded-lg p-4">
-                  <p className="text-sm text-dgray">Order history will be loaded from backend</p>
-                  <p className="text-xs text-dgray mt-1">TODO: Implement order history API</p>
+                  {loadingOrderStats ? (
+                    <p className="text-sm text-dgray">Loading recent orders...</p>
+                  ) : customerOrderStats && customerOrderStats.recentOrders.length > 0 ? (
+                    <div className="space-y-3">
+                      {customerOrderStats.recentOrders.map((order: any) => (
+                        <div key={order.id} className="border border-sage-light rounded-lg p-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-dgreen">Order #{order.orderNumber}</p>
+                              <p className="text-sm text-dgray">₱{order.totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} • {order.itemCount} item(s)</p>
+                              <p className="text-xs text-dgray">{new Date(order.createdAt).toLocaleDateString()}</p>
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              {order.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-dgray">No orders found for this customer.</p>
+                  )}
                 </div>
               </div>
             </div>

@@ -171,12 +171,10 @@ router.put('/profile',
  * 
  * Middleware:
  * - authenticateToken: Verifies JWT token and attaches user to req.user
- * - requireCustomer: Ensures only customers can access this route
  * - changePasswordValidation: Validates password change data
  */
 router.post('/change-password',
   authenticateToken,
-  requireCustomer,
   changePasswordValidation,
   changePassword
 );

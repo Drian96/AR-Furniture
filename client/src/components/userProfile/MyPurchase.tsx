@@ -497,15 +497,15 @@ const MyPurchase = () => {
 
       {/* Cancel Order Confirmation Modal */}
       {showCancelConfirm && actionOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-4 ">
               <h3 className="text-lg font-semibold text-dgreen">Cancel Order</h3>
               <button 
                 onClick={() => setShowCancelConfirm(false)}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 cursor-pointer" />
               </button>
             </div>
             <p className="text-gray-600 mb-6">
@@ -514,13 +514,13 @@ const MyPurchase = () => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowCancelConfirm(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCancelOrder}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer"
               >
                 Yes, Cancel Order
               </button>
@@ -531,7 +531,7 @@ const MyPurchase = () => {
 
       {/* Order Received Confirmation Modal */} 
       {showOrderReceivedConfirm && actionOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-dgreen">Order Received</h3>
@@ -599,7 +599,7 @@ const MyPurchase = () => {
 
       {/* Rating Modal */}
       {showRatingModal && actionOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-dgreen">Rate Your Order</h3>

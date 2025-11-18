@@ -121,6 +121,14 @@ app.use(`${API_PREFIX}/users`, userRoutes);
 // Address management routes - authenticated users
 app.use(`${API_PREFIX}/addresses`, addressRoutes);
 
+// Product management routes
+const productRoutes = require('./routes/products');
+app.use(`${API_PREFIX}/products`, productRoutes);
+
+// Order management routes
+const orderRoutes = require('./routes/orders');
+app.use(`${API_PREFIX}/orders`, orderRoutes);
+
 // Root endpoint - API information
 app.get('/', (req, res) => {
   res.status(200).json({

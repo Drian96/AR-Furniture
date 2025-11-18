@@ -15,7 +15,7 @@ async function sendVerificationEmail(to, code) {
     const mailOptions = {
       from: `"AR-Furniture" <${process.env.GMAIL_USER}>`, // Sender name and email
       to: to, // Recipient email
-      subject: 'Your AR-Furniture Verification Code',
+      subject: 'Your Oneiric Furniture Verification Code',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome to AR-Furniture!</h2>
