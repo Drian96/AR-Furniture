@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { productService, type Product as DbProduct, type ProductImage } from '../../services/supabase';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCartAnimation } from '../../contexts/CartAnimationContext';
 
 interface ProductGridProps {
   selectedCategory: string;
@@ -17,6 +18,7 @@ const ProductGrid = ({ selectedCategory, sortBy, searchQuery = '' }: ProductGrid
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
+  const { triggerAnimation } = useCartAnimation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -124,10 +126,33 @@ const ProductGrid = ({ selectedCategory, sortBy, searchQuery = '' }: ProductGrid
                     navigate('/login');
                     return;
                   }
+                  
+                  // Get button position for animation
+                  const buttonRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  const startX = buttonRect.left + buttonRect.width / 2;
+                  const startY = buttonRect.top + buttonRect.height / 2;
+                  
+                  // Get product image
                   const firstImage = imagesByProduct[product.id]?.[0]?.image_url;
+                  
+                  // Trigger the flying animation
+                  triggerAnimation({
+                    imageUrl: firstImage,
+                    productName: product.name,
+                    startX,
+                    startY,
+                  });
+                  
+                  // Add item to cart
                   addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, 1);
+                  
+                  // Add button animation feedback
+                  e.currentTarget.classList.add('animate-button-bounce');
+                  setTimeout(() => {
+                    e.currentTarget.classList.remove('animate-button-bounce');
+                  }, 600);
                 }}
-                className="w-full mt-4 bg-dgreen text-cream px-6 py-3 rounded-lg font-medium hover:bg-lgreen cursor-pointer"
+                className="w-full mt-4 bg-dgreen text-cream px-6 py-3 rounded-lg font-medium hover:bg-lgreen cursor-pointer transition-transform active:scale-95"
               >
                 Add to Cart
               </button>

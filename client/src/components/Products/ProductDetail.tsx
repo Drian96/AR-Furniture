@@ -1,10 +1,11 @@
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2 } from 'lucide-react';
 import { productService, reviewService, type Product as DbProduct, type ProductImage, type ProductReview, type ProductReviewStats } from '../../services/supabase';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCartAnimation } from '../../contexts/CartAnimationContext';
 import ARViewer from '../AR/ARViewer';
 
 const ProductDetail = () => {
@@ -19,7 +20,9 @@ const ProductDetail = () => {
   const [showAR, setShowAR] = useState(false);
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
+  const { triggerAnimation } = useCartAnimation();
   const navigate = useNavigate();
+  const addToCartButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -64,6 +67,31 @@ const ProductDetail = () => {
       navigate('/login');
       return;
     }
+    
+    // Get button position for animation
+    if (addToCartButtonRef.current) {
+      const buttonRect = addToCartButtonRef.current.getBoundingClientRect();
+      const startX = buttonRect.left + buttonRect.width / 2;
+      const startY = buttonRect.top + buttonRect.height / 2;
+      
+      // Get product image
+      const firstImage = images[0]?.image_url;
+      
+      // Trigger the flying animation
+      triggerAnimation({
+        imageUrl: firstImage,
+        productName: product.name,
+        startX,
+        startY,
+      });
+      
+      // Add button animation feedback
+      addToCartButtonRef.current.classList.add('animate-button-bounce');
+      setTimeout(() => {
+        addToCartButtonRef.current?.classList.remove('animate-button-bounce');
+      }, 600);
+    }
+    
     const firstImage = images[0]?.image_url;
     addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, quantity);
   };
@@ -74,6 +102,25 @@ const ProductDetail = () => {
       navigate('/login');
       return;
     }
+    
+    // Get button position for animation (use add to cart button position as fallback)
+    if (addToCartButtonRef.current) {
+      const buttonRect = addToCartButtonRef.current.getBoundingClientRect();
+      const startX = buttonRect.left + buttonRect.width / 2;
+      const startY = buttonRect.top + buttonRect.height / 2;
+      
+      // Get product image
+      const firstImage = images[0]?.image_url;
+      
+      // Trigger the flying animation
+      triggerAnimation({
+        imageUrl: firstImage,
+        productName: product.name,
+        startX,
+        startY,
+      });
+    }
+    
     // Add item to cart and redirect to checkout
     const firstImage = images[0]?.image_url;
     addItem({ productId: product.id, name: product.name, price: product.price, imageUrl: firstImage }, quantity);
@@ -184,8 +231,9 @@ const ProductDetail = () => {
             {/* Action Buttons */}
             <div className="space-y-4">
               <button
+                ref={addToCartButtonRef}
                 onClick={handleAddToCart}
-                className="w-full bg-dgreen text-cream px-8 py-4 rounded-lg font-medium hover:bg-lgreen transition-all duration-300 text-lg cursor-pointer"
+                className="w-full bg-dgreen text-cream px-8 py-4 rounded-lg font-medium hover:bg-lgreen transition-all duration-300 text-lg cursor-pointer active:scale-95"
               >
                 Add to Cart
               </button>

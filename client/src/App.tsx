@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { CartAnimationProvider } from './contexts/CartAnimationContext';
+import FlyingItem from './components/Cart/FlyingItem';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
@@ -21,7 +23,10 @@ const App = () => {
   return (
     <AuthProvider>
       <CartProvider>
-        <Routes>
+        <CartAnimationProvider>
+          {/* Flying item animation component - renders when add to cart is clicked */}
+          <FlyingItem />
+          <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
@@ -51,6 +56,7 @@ const App = () => {
         <Route path="/logout" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
         </Routes>
+        </CartAnimationProvider>
       </CartProvider>
     </AuthProvider>
   );

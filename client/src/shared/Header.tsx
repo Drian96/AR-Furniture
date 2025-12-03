@@ -16,6 +16,8 @@ const Header = () => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
+  const [shouldPulseCart, setShouldPulseCart] = useState(false);
+  const prevQuantityRef = useRef(totalQuantity);
   
   // Refs for dropdowns
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -23,6 +25,16 @@ const Header = () => {
   const cartDropdownRef = useRef<HTMLDivElement>(null);
   
   let hoverTimeout: any;
+
+  // Trigger pulse animation when cart quantity increases
+  useEffect(() => {
+    if (totalQuantity > prevQuantityRef.current && totalQuantity > 0) {
+      setShouldPulseCart(true);
+      // Reset after animation completes
+      setTimeout(() => setShouldPulseCart(false), 600);
+    }
+    prevQuantityRef.current = totalQuantity;
+  }, [totalQuantity]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,10 +204,11 @@ const Header = () => {
               <button 
                 className="relative text-dgreen hover:text-lgreen transition-colors"
                 onClick={() => setShowCart(!showCart)}
+                data-cart-icon
               >
                 <ShoppingCart className="w-6 h-6 cursor-pointer" />
                 {totalQuantity > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-dgreen text-cream text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className={`absolute -top-2 -right-2 bg-dgreen text-cream text-xs rounded-full w-5 h-5 flex items-center justify-center ${shouldPulseCart ? 'animate-pulse-on-add' : ''}`}>
                     {totalQuantity}
                   </span>
                 )}
@@ -380,10 +393,11 @@ const Header = () => {
               <button 
                 className="relative text-dgreen hover:text-lgreen transition-colors p-2"
                 onClick={() => setShowCart(!showCart)}
+                data-cart-icon
               >
                 <ShoppingCart className="w-5 h-5" />
                 {totalQuantity > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-dgreen text-cream text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className={`absolute -top-1 -right-1 bg-dgreen text-cream text-xs rounded-full w-4 h-4 flex items-center justify-center ${shouldPulseCart ? 'animate-pulse-on-add' : ''}`}>
                     {totalQuantity}
                   </span>
                 )}

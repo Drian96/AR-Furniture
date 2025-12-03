@@ -9,6 +9,41 @@
 --color-cream: #FEFAE0;
 }
 
+/* 
+ * Cart Animation Styles
+ * These animations make the add to cart experience more engaging and fun!
+ */
+
+/* Button bounce animation - gives feedback when add to cart is clicked */
+@keyframes button-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+}
+
+.animate-button-bounce {
+  animation: button-bounce 0.3s ease-in-out;
+}
+
+/* Pulse animation for cart badge - draws attention when item is added */
+@keyframes pulse-on-add {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(10, 64, 12, 0.7);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 8px rgba(10, 64, 12, 0);
+  }
+}
+
+.animate-pulse-on-add {
+  animation: pulse-on-add 0.6s ease-out;
+}
+
 
 
 
