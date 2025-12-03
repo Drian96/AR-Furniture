@@ -18,7 +18,7 @@ async function sendVerificationEmail(to, code) {
     // Defaults to onboarding@resend.dev (Resend's free tier default)
     // You can set RESEND_FROM_EMAIL in your .env file if you have a verified domain
     // Example: RESEND_FROM_EMAIL=noreply@yourdomain.com
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const fromEmail = 'onboarding@resend.dev';
     
     // Send email using Resend API
     // Using onboarding@resend.dev for free tier (no domain verification needed)
@@ -28,7 +28,7 @@ async function sendVerificationEmail(to, code) {
       subject: 'Your Oneiric Furniture Verification Code',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Welcome to AR-Furniture!</h2>
+          <h2 style="color: #333;">Welcome to Oneiric Furniture!</h2>
           <p>Thank you for signing up. Please use the verification code below to complete your registration:</p>
           <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
             <h1 style="color: #007bff; font-size: 32px; margin: 0;">${code}</h1>
