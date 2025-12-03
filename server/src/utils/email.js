@@ -1,19 +1,29 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Create Gmail SMTP transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASS
-  }
-});
+// Initialize Resend with API key from environment variables
+// Make sure RESEND_API_KEY is set in your .env file
+const resend = new Resend(process.env.RESEND_API_KEY);
 
+/**
+ * Send verification code email using Resend
+ * This function is used for both signup verification and password reset
+ * 
+ * @param {string} to - Recipient email address
+ * @param {string} code - 6-digit verification code
+ * @returns {Promise} - Resend API response
+ */
 async function sendVerificationEmail(to, code) {
   try {
-    // Email configuration
-    const mailOptions = {
-      from: `"AR-Furniture" <${process.env.GMAIL_USER}>`, // Sender name and email
+    // Get the sender email from environment variable
+    // Defaults to onboarding@resend.dev (Resend's free tier default)
+    // You can set RESEND_FROM_EMAIL in your .env file if you have a verified domain
+    // Example: RESEND_FROM_EMAIL=noreply@yourdomain.com
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    
+    // Send email using Resend API
+    // Using onboarding@resend.dev for free tier (no domain verification needed)
+    const data = await resend.emails.send({
+      from: 'AR-Furniture <onboarding@resend.dev>', // Sender name and email
       to: to, // Recipient email
       subject: 'Your Oneiric Furniture Verification Code',
       html: `
@@ -29,12 +39,10 @@ async function sendVerificationEmail(to, code) {
           <p style="color: #666; font-size: 14px;">Best regards,<br>The AR-Furniture Team</p>
         </div>
       `
-    };
+    });
 
-    // Send the email
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Verification email sent successfully:', info.messageId);
-    return info;
+    console.log('✅ Verification email sent successfully:', data.id);
+    return data;
 
   } catch (error) {
     console.error('❌ Error sending verification email:', error);
