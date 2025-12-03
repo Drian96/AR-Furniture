@@ -175,9 +175,11 @@ const startServer = async (port = process.env.PORT || 5000) => {
     console.log('📊 Testing database connection...');
     await testConnection();
     
-    // Sync database schema (create/update tables in Supabase)
+    // Sync database schema (only create tables if they don't exist)
+    // NOTE: We use SQL migrations for schema changes, not Sequelize sync
+    // alter: true is disabled because it conflicts with RLS policies
     console.log('🛠 Syncing database schema...');
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false }); // Only creates tables, doesn't alter existing ones
     console.log('✅ Database schema synced.');
     
     // Start the HTTP server

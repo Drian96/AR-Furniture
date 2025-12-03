@@ -1,8 +1,9 @@
-import { Search, ShoppingCart, User, LogOut, Bell } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, ShoppingCart, User, LogOut, Bell, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import furnitureLogo from '../assets/AR-Furniture_Logo.png';
 import shopName from '../assets/NAME.png'
 
@@ -16,8 +17,10 @@ const Header = () => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
+  const { notifications, unreadCount, markAsRead, deleteNotification } = useNotifications();
   const [shouldPulseCart, setShouldPulseCart] = useState(false);
   const prevQuantityRef = useRef(totalQuantity);
+  const navigate = useNavigate();
   
   // Refs for dropdowns
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -61,32 +64,36 @@ const Header = () => {
     }
   };
 
-  // Mock notification data
-  const notifications = [
-    {
-      id: 1,
-      title: "Order Confirmed",
-      message: "Your order #12345 has been confirmed",
-      time: "2 hours ago",
-      read: false
-    },
-    {
-      id: 2,
-      title: "New Product Alert",
-      message: "Check out our new furniture collection",
-      time: "1 day ago",
-      read: false
-    },
-    {
-      id: 3,
-      title: "Delivery Update",
-      message: "Your order will arrive tomorrow",
-      time: "2 days ago",
-      read: true
-    }
-  ];
+  // Helper function to format time ago (e.g., "2 hours ago")
+  const formatTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+    return `${Math.floor(diffInSeconds / 2592000)} months ago`;
+  };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  // Handle notification click - mark as read and navigate if link exists
+  const handleNotificationClick = async (notification: typeof notifications[0]) => {
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+    if (notification.link) {
+      navigate(notification.link);
+      setShowNotifications(false);
+    }
+  };
+
+  // Handle delete notification
+  const handleDeleteNotification = async (e: React.MouseEvent, notificationId: string) => {
+    e.stopPropagation(); // Prevent triggering the click handler
+    await deleteNotification(notificationId);
+  };
 
   // Handle click outside to close dropdowns
   useEffect(() => {
@@ -178,22 +185,46 @@ const Header = () => {
               {/* Notification Dropdown */}
               {showNotifications && (
                 <div className="absolute right-0 top-full w-80 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50 mt-2">
-                  <h4 className="text-dgreen font-semibold mb-3">Notifications</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-dgreen font-semibold">Notifications</h4>
+                    {unreadCount > 0 && (
+                      <span className="text-xs text-dgray">({unreadCount} unread)</span>
+                    )}
+                  </div>
                   <div className="max-h-64 overflow-y-auto space-y-3">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className={`p-3 rounded-lg ${!notification.read ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}>
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h5 className="text-sm font-medium text-gray-900">{notification.title}</h5>
-                            <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                            <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
-                          </div>
-                          {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full ml-2"></div>
-                          )}
-                        </div>
+                    {notifications.length === 0 ? (
+                      <div className="text-center py-8 text-dgray text-sm">
+                        No notifications yet
                       </div>
-                    ))}
+                    ) : (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors relative ${
+                            !notification.read ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'
+                          }`}
+                          onClick={() => handleNotificationClick(notification)}
+                        >
+                          <button
+                            onClick={(e) => handleDeleteNotification(e, notification.id)}
+                            className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors z-10"
+                            title="Delete notification"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          <div className="flex justify-between items-start pr-6">
+                            <div className="flex-1">
+                              <h5 className="text-sm font-medium text-gray-900">{notification.title}</h5>
+                              <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{formatTimeAgo(notification.created_at)}</p>
+                            </div>
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 flex-shrink-0"></div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -367,22 +398,46 @@ const Header = () => {
               {/* Mobile Notification Dropdown */}
               {showNotifications && (
                 <div className="absolute right-0 top-full w-72 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50 mt-2">
-                  <h4 className="text-dgreen font-semibold mb-3 text-sm">Notifications</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-dgreen font-semibold text-sm">Notifications</h4>
+                    {unreadCount > 0 && (
+                      <span className="text-xs text-dgray">({unreadCount})</span>
+                    )}
+                  </div>
                   <div className="max-h-48 overflow-y-auto space-y-2">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className={`p-2 rounded-lg ${!notification.read ? 'bg-blue-50 border-l-2 border-blue-500' : 'bg-gray-50'}`}>
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h5 className="text-xs font-medium text-gray-900">{notification.title}</h5>
-                            <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                            <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
-                          </div>
-                          {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full ml-2"></div>
-                          )}
-                        </div>
+                    {notifications.length === 0 ? (
+                      <div className="text-center py-6 text-dgray text-xs">
+                        No notifications yet
                       </div>
-                    ))}
+                    ) : (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors relative ${
+                            !notification.read ? 'bg-blue-50 border-l-2 border-blue-500' : 'bg-gray-50'
+                          }`}
+                          onClick={() => handleNotificationClick(notification)}
+                        >
+                          <button
+                            onClick={(e) => handleDeleteNotification(e, notification.id)}
+                            className="absolute top-1 right-1 text-gray-400 hover:text-red-500 transition-colors z-10"
+                            title="Delete notification"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <div className="flex justify-between items-start pr-5">
+                            <div className="flex-1">
+                              <h5 className="text-xs font-medium text-gray-900">{notification.title}</h5>
+                              <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{formatTimeAgo(notification.created_at)}</p>
+                            </div>
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 flex-shrink-0"></div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}

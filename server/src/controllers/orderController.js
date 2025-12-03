@@ -1,5 +1,6 @@
 const { sequelize } = require('../config/database');
 const { QueryTypes } = require('sequelize');
+const { createOrderNotification, createAdminOrderNotification } = require('../utils/notifications');
 
 /**
  * Order Controller
@@ -154,6 +155,31 @@ exports.createOrder = async (req, res) => {
 
     // Commit transaction
     await transaction.commit();
+
+    // Create notification for the user about their new order
+    const customerName = `${first_name} ${last_name}`;
+
+    try {
+      await Promise.all([
+        createOrderNotification(
+          user_id,
+          newOrder.order_number,
+          newOrder.id,
+          'pending',
+          newOrder.total_amount
+        ),
+        createAdminOrderNotification({
+          orderNumber: newOrder.order_number,
+          orderId: newOrder.id,
+          totalAmount: newOrder.total_amount,
+          customerName,
+          event: 'new_order',
+        }),
+      ]);
+    } catch (notifError) {
+      // Don't fail the order creation if notification fails
+      console.warn('⚠️ Failed to create order notification:', notifError.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -327,7 +353,7 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'return_refund'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -351,6 +377,31 @@ exports.updateOrderStatus = async (req, res) => {
         success: false,
         message: 'Order not found'
       });
+    }
+
+    // Create notification for the user about order status update
+    try {
+      await createOrderNotification(
+        updatedOrder.user_id,
+        updatedOrder.order_number,
+        updatedOrder.id,
+        status,
+        updatedOrder.total_amount
+      );
+
+      // Notify admins only when the event was triggered by the customer (cancel/return)
+      if (['cancelled', 'return_refund'].includes(status)) {
+        await createAdminOrderNotification({
+          orderNumber: updatedOrder.order_number,
+          orderId: updatedOrder.id,
+          totalAmount: updatedOrder.total_amount,
+          customerName: `${updatedOrder.first_name} ${updatedOrder.last_name}`,
+          event: status,
+        });
+      }
+    } catch (notifError) {
+      // Don't fail the status update if notification fails
+      console.warn('⚠️ Failed to create status update notification:', notifError.message);
     }
 
     res.status(200).json({

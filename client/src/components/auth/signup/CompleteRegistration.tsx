@@ -72,7 +72,7 @@ const CompleteRegistration: React.FC = () => {
     // Validate password strength to match server rules
     const strongPwd = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!strongPwd.test(formData.password)) {
-      setError('Password must be 8+ chars and include upper, lower, and number');
+      setError('Password must be 8+ characters and include upper, lower, and number');
       setLoading(false);
       return;
     }
