@@ -7,4 +7,4 @@ Technologies and tools
 - Tailwind CSS
 - Node.js
 - Express.js
-- PostgreSQL
+- PostgreSQL/Supabase
