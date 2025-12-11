@@ -22,7 +22,7 @@ async function sendVerificationEmail(to, code) {
         <div style="font-family: Arial, sans-serif; line-height: 1.6;">
           <h2>Welcome to Oneiric Furniture!</h2>
 
-          <p>Thank you for signing up. Please use the verification code below to complete your registration:</p>
+          <p>Thank you. Please use the verification code below to complete your registration:</p>
 
           <h1 style="font-size: 32px; color: #4A4A4A;">${code}</h1>
 

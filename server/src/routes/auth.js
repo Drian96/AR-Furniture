@@ -12,7 +12,8 @@ const {
   logout,
   sendVerificationCode,
   verifyCode,
-  resetPassword
+  resetPassword,
+  oauthCallback
 } = require('../controllers/authController');
 
 // Import authentication middleware
@@ -308,6 +309,31 @@ router.post('/verify-code', verifyCode);
  * Body: { email, code, newPassword }
  */
 router.post('/reset-password', resetPassword);
+
+/**
+ * POST /api/auth/oauth/callback
+ * Handle OAuth callback from Supabase
+ * Creates user if doesn't exist, prevents sign-in if email already exists
+ * 
+ * Request Body:
+ * {
+ *   email: "user@example.com",
+ *   firstName: "John" (optional),
+ *   lastName: "Doe" (optional),
+ *   provider: "google" (optional)
+ * }
+ * 
+ * Response:
+ * {
+ *   success: true,
+ *   message: "OAuth authentication successful",
+ *   data: {
+ *     user: { id, email, firstName, lastName, role, status },
+ *     token: "jwt_token_here"
+ *   }
+ * }
+ */
+router.post('/oauth/callback', oauthCallback);
 
 // Export the router
 module.exports = router;

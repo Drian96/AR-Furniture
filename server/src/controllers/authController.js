@@ -613,6 +613,125 @@ const resetPassword = async (req, res) => {
   }
 };
 
+/**
+ * OAuth Callback Controller
+ * Handles OAuth authentication (Google, Facebook, etc.)
+ * Prevents OAuth sign-in if email already exists in users table
+ * 
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ * 
+ * Expected request body:
+ * {
+ *   email: "user@example.com",
+ *   firstName: "John",
+ *   lastName: "Doe",
+ *   provider: "google" (optional)
+ * }
+ */
+const oauthCallback = async (req, res) => {
+  try {
+    console.log('🔄 Processing OAuth callback...');
+
+    const { email, firstName, lastName, provider } = req.body;
+
+    // Validate required fields
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    // Check if user already exists with this email
+    const existingUser = await User.findOne({ 
+      where: { email: email.toLowerCase() } 
+    });
+
+    if (existingUser) {
+      // If user exists, treat this as a login and return a token
+      if (!existingUser.isActive()) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account is inactive. Please contact support.',
+        });
+      }
+
+      await existingUser.update({ last_login: new Date() });
+      const token = generateToken(existingUser);
+
+      return res.status(200).json({
+        success: true,
+        message: 'OAuth login successful',
+        data: {
+          user: {
+            id: existingUser.id,
+            email: existingUser.email,
+            firstName: existingUser.first_name,
+            lastName: existingUser.last_name,
+            role: existingUser.role,
+            status: existingUser.status,
+            lastLogin: existingUser.last_login
+          },
+          token
+        }
+      });
+    }
+
+    // User doesn't exist - create new user account
+    // Generate a random password for OAuth users (they won't use it)
+    // OAuth users authenticate via Supabase, but we need a password_hash for the database
+    const randomPassword = `oauth_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const hashedPassword = await hashPassword(randomPassword);
+
+    // Create new user in database
+    // Note: last_name is required, so we use a default if not provided
+    const newUser = await User.create({
+      first_name: firstName || 'User',
+      last_name: lastName || 'User', // Use 'User' as default since last_name is required
+      email: email.toLowerCase(),
+      password_hash: hashedPassword, // OAuth users won't use this
+      role: 'customer', // Default role for new users
+      status: 'active'  // Default status
+    });
+
+    // Update last login timestamp
+    await newUser.update({ last_login: new Date() });
+
+    // Generate JWT token for the new user
+    const token = generateToken(newUser);
+
+    // Return success response with user data
+    res.status(201).json({
+      success: true,
+      message: 'OAuth authentication successful',
+      data: {
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.first_name,
+          lastName: newUser.last_name,
+          role: newUser.role,
+          status: newUser.status,
+          lastLogin: newUser.last_login
+        },
+        token: token
+      }
+    });
+
+    console.log('✅ OAuth user created successfully:', newUser.email);
+
+  } catch (error) {
+    console.error('❌ OAuth callback error:', error);
+    console.error('❌ Error stack:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during OAuth authentication',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 // Export all controller functions
 module.exports = {
   register,      // User registration
@@ -623,5 +742,6 @@ module.exports = {
   logout,         // User logout
   sendVerificationCode, // Send verification code
   verifyCode,     // Verify verification code
-  resetPassword   // Reset password with code
+  resetPassword,  // Reset password with code
+  oauthCallback   // OAuth callback handler
 };

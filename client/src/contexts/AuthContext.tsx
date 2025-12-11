@@ -44,6 +44,7 @@ interface AuthContextType {
   
   // Utility functions
   clearUser: () => void;
+  refreshAuth: () => Promise<void>;
 }
 
 // Provider props interface
@@ -224,6 +225,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     removeToken();
   };
 
+  /**
+   * Refresh authentication state by verifying the current token
+   * Useful after OAuth callbacks or token updates
+   */
+  const refreshAuth = async (): Promise<void> => {
+    try {
+      if (isAuthenticated()) {
+        const userData = await verifyToken();
+        setUser(userData);
+        console.log('✅ Auth refreshed, user authenticated:', userData.email);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('❌ Auth refresh failed:', error);
+      setUser(null);
+      removeToken();
+    }
+  };
+
   // ============================================================================
   // CONTEXT VALUE
   // ============================================================================
@@ -241,6 +262,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
     changePassword,
     clearUser,
+    refreshAuth,
   };
 
   // ============================================================================

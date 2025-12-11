@@ -370,6 +370,34 @@ export const resetPassword = async (email: string, code: string, newPassword: st
   });
 };
 
+/**
+ * Handle OAuth callback - creates user if doesn't exist, prevents sign-in if email exists
+ * @param email - User's email from OAuth provider
+ * @param firstName - User's first name (optional)
+ * @param lastName - User's last name (optional)
+ * @param provider - OAuth provider name (optional)
+ * @returns Promise with user data and token
+ */
+export const oauthCallback = async (
+  email: string,
+  firstName?: string,
+  lastName?: string,
+  provider?: string
+): Promise<AuthResponse> => {
+  const response = await apiRequest<AuthResponse>('/auth/oauth/callback', {
+    method: 'POST',
+    body: JSON.stringify({ email, firstName, lastName, provider }),
+  });
+
+  if (response.success && response.data) {
+    // Store the token automatically
+    setToken(response.data.token);
+    return response.data;
+  }
+
+  throw new Error(response.message || 'OAuth authentication failed');
+};
+
 // ============================================================================
 // HEALTH CHECK
 // Function to check if API is running
@@ -405,6 +433,8 @@ export default {
   verifyToken,
   sendVerificationCode,
   verifyCode,
+  resetPassword,
+  oauthCallback,
   
   // Token management
   getToken,
