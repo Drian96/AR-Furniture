@@ -187,6 +187,11 @@ const apiRequest = async <T>(
     console.log(`📡 API Response:`, data);
 
     if (!response.ok) {
+      // If there are validation errors, include them in the error message
+      if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        const errorMessages = data.errors.join('. ');
+        throw new Error(errorMessages || data.message || `HTTP ${response.status}`);
+      }
       throw new Error(data.message || `HTTP ${response.status}`);
     }
 

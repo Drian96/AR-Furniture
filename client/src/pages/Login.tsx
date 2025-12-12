@@ -6,6 +6,8 @@ import { twMerge } from 'tailwind-merge';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { signInWithGoogle } from '../services/supabase/auth';
+import furnitureLogo from '../assets/AR-Furniture_Logo.png';
+import shopName from '../assets/NAME.png';
 // import { signInWithFacebook } from '../services/supabase/auth'; // Commented out - Facebook OAuth has conflicts
 
 const Login: React.FC = () => {
@@ -96,7 +98,7 @@ const Login: React.FC = () => {
   // }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 flex-col">
       <video 
               src={LoginBG} 
               autoPlay 
@@ -106,9 +108,14 @@ const Login: React.FC = () => {
               className='absolute inset-0 w-full h-full object-cover z-0' 
           />
 
-      <div className='absolute top-7 text-dgreen font-bold text-4xl font-serif w-full'>
-        <h1 className='text-center'>Oneiric Furniture</h1>
-      </div>
+        <div className="flex items-center justify-center z-10 mb-10">
+            <Link to="/" className="text-2xl font-serif font-bold text-dgreen hover:text-lgreen transition-colors">
+              <div className="flex items-center">
+                <img src={furnitureLogo} alt="Furniture Logo" className="h-20 mt-2" />
+                <img src={shopName} alt="Shop Name" className="h-15 mt-2" />
+              </div>
+            </Link>
+          </div>
 
       <div className="bg-black/45 rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto z-10">
         <h2 className="text-3xl font-bold text-lgreen mb-6 text-center">Login Now!</h2>

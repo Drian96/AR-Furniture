@@ -17,7 +17,11 @@ export async function signInWithOAuth(
   redirectTo?: string
 ): Promise<void> {
   try {
+    // Use provided redirect URL or construct from current origin
+    // This works for both localhost and production automatically
     const redirectUrl = redirectTo || `${window.location.origin}/auth/callback`;
+    
+    console.log(`🔐 Initiating ${provider} OAuth with redirect: ${redirectUrl}`);
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider,

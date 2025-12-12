@@ -459,6 +459,21 @@ const sendVerificationCode = async (req, res) => {
       });
     }
 
+    // Check if user already exists with this email
+    const existingUser = await User.findOne({ 
+      where: { email: email.toLowerCase() } 
+    });
+
+    if (existingUser) {
+      // User already exists - don't send verification code
+      console.log('⚠️ Verification code blocked: User already exists:', email);
+      return res.status(400).json({
+        success: false,
+        message: 'An account with this email already exists. Please sign in instead.',
+        code: 'EMAIL_EXISTS'
+      });
+    }
+
     // Generate a 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 

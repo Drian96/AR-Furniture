@@ -48,8 +48,8 @@ const registerValidation = [
     .withMessage('First name is required')
     .isLength({ min: 2, max: 50 }) // Must be 2-50 characters
     .withMessage('First name must be between 2 and 50 characters')
-    .matches(/^[a-zA-Z\s]+$/)  // Only letters and spaces allowed
-    .withMessage('First name can only contain letters and spaces'),
+    .matches(/^[a-zA-Z0-9\s'-]+$/)  // Allow letters, numbers, spaces, hyphens, and apostrophes
+    .withMessage('First name can only contain letters, numbers, spaces, hyphens, and apostrophes'),
 
   // Validate last name
   body('lastName')
@@ -58,8 +58,8 @@ const registerValidation = [
     .withMessage('Last name is required')
     .isLength({ min: 2, max: 50 })
     .withMessage('Last name must be between 2 and 50 characters')
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Last name can only contain letters and spaces'),
+    .matches(/^[a-zA-Z0-9\s'-]+$/)  // Allow letters, numbers, spaces, hyphens, and apostrophes
+    .withMessage('Last name can only contain letters, numbers, spaces, hyphens, and apostrophes'),
 
   // Validate email
   body('email')
@@ -191,8 +191,8 @@ const profileUpdateValidation = [
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('First name must be between 2 and 50 characters')
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('First name can only contain letters and spaces'),
+    .matches(/^[a-zA-Z0-9\s'-]+$/)  // Allow letters, numbers, spaces, hyphens, and apostrophes
+    .withMessage('First name can only contain letters, numbers, spaces, hyphens, and apostrophes'),
 
   // Validate last name
   body('lastName')
@@ -200,8 +200,8 @@ const profileUpdateValidation = [
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Last name must be between 2 and 50 characters')
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Last name can only contain letters and spaces'),
+    .matches(/^[a-zA-Z0-9\s'-]+$/)  // Allow letters, numbers, spaces, hyphens, and apostrophes
+    .withMessage('Last name can only contain letters, numbers, spaces, hyphens, and apostrophes'),
 
   // Validate phone number
   // Accept international (+XXXXXXXX) or local starting with 0

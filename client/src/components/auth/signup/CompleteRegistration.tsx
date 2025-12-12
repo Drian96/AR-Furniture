@@ -95,7 +95,10 @@ const CompleteRegistration: React.FC = () => {
       // Prevent any automatic redirects by staying on this page
       // The modal will handle the navigation when user clicks OK
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+      // Display validation errors or general error message
+      const errorMessage = err.message || 'Registration failed. Please try again.';
+      setError(errorMessage);
+      console.error('Registration error:', err);
     } finally {
       setLoading(false);
     }
@@ -195,7 +198,7 @@ const CompleteRegistration: React.FC = () => {
             required
           />
           <label htmlFor="terms" className="text-sm text-dgray">
-            I agree to the <Link to="/terms" className="text-dgreen hover:underline">Terms & Conditions</Link>
+            I agree to the <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-dgreen hover:underline">Terms & Conditions</Link>
           </label>
         </div>
 
