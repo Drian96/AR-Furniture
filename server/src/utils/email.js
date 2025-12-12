@@ -11,8 +11,19 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function sendVerificationEmail(to, code) {
   try {
     // Use custom email from .env (REQUIRED after domain verification)
-    // Example: RESEND_FROM_EMAIL="Oneiric Furniture <noreply@oneiricfurniture.com>"
-    const fromEmail = process.env.RESEND_FROM_EMAIL;
+    // Format: "Name <email@domain.com>" or "email@domain.com"
+    // Strip any surrounding quotes that might be in the env variable
+    let fromEmail = process.env.RESEND_FROM_EMAIL;
+    
+    // Remove surrounding quotes if present (handles cases where env var has quotes)
+    if (fromEmail) {
+      fromEmail = fromEmail.trim().replace(/^["']|["']$/g, '');
+    }
+
+    // Fallback to default if not set
+    if (!fromEmail) {
+      fromEmail = 'noreply@oneiric.shop';
+    }
 
     const data = await resend.emails.send({
       from: fromEmail, 
