@@ -27,39 +27,66 @@ const AdminCustomer = () => {
     address: ''
   });
 
+  // Fetch customers with basic info plus derived order stats
+  const loadCustomersWithStats = async () => {
+    try {
+      setLoading(true);
+      const data = await adminListUsers();
+      const customerUsers = data.users.filter((u: any) => u.role === 'customer');
+
+      // Base mapping (keeps UI responsive while stats load)
+      const baseCustomers = customerUsers.map((u: any) => ({
+        id: u.id,
+        name: `${u.firstName || u.first_name} ${u.lastName || u.last_name}`,
+        email: u.email,
+        phone: u.phone || 'N/A',
+        address: 'N/A',
+        orders: 'Loading...',
+        totalSpent: 'Loading...',
+        lastOrder: 'Loading...',
+        status: (u.status || 'active').charAt(0).toUpperCase() + (u.status || 'active').slice(1),
+        firstName: u.firstName || u.first_name,
+        lastName: u.lastName || u.last_name
+      }));
+
+      setCustomers(baseCustomers);
+
+      // Fetch per-customer order stats in parallel
+      const customersWithStats = await Promise.all(
+        baseCustomers.map(async (customer) => {
+          try {
+            const stats = await getCustomerOrders(customer.id);
+            return {
+              ...customer,
+              orders: stats.customer.totalOrders ?? 0,
+              totalSpent: `₱${(stats.customer.totalSpent ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+              lastOrder: stats.customer.lastOrderDate
+                ? new Date(stats.customer.lastOrderDate).toLocaleDateString()
+                : 'No orders yet'
+            };
+          } catch (err) {
+            console.error(`Failed to load stats for customer ${customer.id}:`, err);
+            return {
+              ...customer,
+              orders: 0,
+              totalSpent: '₱0.00',
+              lastOrder: 'No orders yet'
+            };
+          }
+        })
+      );
+
+      setCustomers(customersWithStats);
+    } catch (error) {
+      console.error('Failed to load customers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch customers from database
   useEffect(() => {
-    const loadCustomers = async () => {
-      try {
-        setLoading(true);
-        const data = await adminListUsers();
-        // Filter only customers (role = 'customer')
-        const customerUsers = data.users.filter((u: any) => u.role === 'customer');
-        
-        // Map the data to match our component structure
-        const mappedCustomers = customerUsers.map((u: any) => ({
-          id: u.id,
-          name: `${u.firstName || u.first_name} ${u.lastName || u.last_name}`,
-          email: u.email,
-          phone: u.phone || 'N/A',
-          address: 'N/A', // Address field not available in current User model
-          orders: 'Loading...', // Will be updated when viewing customer details
-          totalSpent: 'Loading...', // Will be updated when viewing customer details
-          lastOrder: 'Loading...', // Will be updated when viewing customer details
-          status: (u.status || 'active').charAt(0).toUpperCase() + (u.status || 'active').slice(1),
-          firstName: u.firstName || u.first_name,
-          lastName: u.lastName || u.last_name
-        }));
-        
-        setCustomers(mappedCustomers);
-      } catch (error) {
-        console.error('Failed to load customers:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCustomers();
+    loadCustomersWithStats();
   }, []);
 
   // Filter customers based on search term and status
@@ -125,23 +152,8 @@ const AdminCustomer = () => {
       setShowDeleteConfirm(false);
       setSelectedCustomer(null);
       
-      // Refresh customer list
-      const data = await adminListUsers();
-      const customerUsers = data.users.filter((u: any) => u.role === 'customer');
-      const mappedCustomers = customerUsers.map((u: any) => ({
-        id: u.id,
-        name: `${u.firstName || u.first_name} ${u.lastName || u.last_name}`,
-        email: u.email,
-        phone: u.phone || 'N/A',
-        address: 'N/A', // Address field not available in current User model
-        orders: 0, // Orders field not available in current User model
-        totalSpent: '₱0', // Total spent field not available in current User model
-        lastOrder: 'N/A', // Last order field not available in current User model
-        status: (u.status || 'active').charAt(0).toUpperCase() + (u.status || 'active').slice(1),
-        firstName: u.firstName || u.first_name,
-        lastName: u.lastName || u.last_name
-      }));
-      setCustomers(mappedCustomers);
+      // Refresh customer list with updated stats
+      await loadCustomersWithStats();
       
       // Show success message
       setSuccessMessage('Customer has been deleted successfully.');
@@ -179,23 +191,8 @@ const AdminCustomer = () => {
       setShowEditCustomer(false);
       setSelectedCustomer(null);
       
-      // Refresh customer list
-      const data = await adminListUsers();
-      const customerUsers = data.users.filter((u: any) => u.role === 'customer');
-      const mappedCustomers = customerUsers.map((u: any) => ({
-        id: u.id,
-        name: `${u.firstName || u.first_name} ${u.lastName || u.last_name}`,
-        email: u.email,
-        phone: u.phone || 'N/A',
-        address: 'N/A', // Address field not available in current User model
-        orders: 0, // Orders field not available in current User model
-        totalSpent: '₱0', // Total spent field not available in current User model
-        lastOrder: 'N/A', // Last order field not available in current User model
-        status: (u.status || 'active').charAt(0).toUpperCase() + (u.status || 'active').slice(1),
-        firstName: u.firstName || u.first_name,
-        lastName: u.lastName || u.last_name
-      }));
-      setCustomers(mappedCustomers);
+      // Refresh customer list with updated stats
+      await loadCustomersWithStats();
       
       // Show success message
       setSuccessMessage('Customer information has been updated successfully.');

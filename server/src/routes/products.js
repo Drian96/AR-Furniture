@@ -13,6 +13,7 @@ const {
 
 // Import authentication middleware
 const { authenticateToken, requireStaff } = require('../middleware/auth');
+const { auditLogger } = require('../middleware/auditLogger');
 
 // ============================================================================
 // PRODUCT ROUTES
@@ -101,7 +102,7 @@ router.get('/:id', getProductById);
  * - authenticateToken: Verifies JWT token
  * - requireStaff: Ensures only staff can create products
  */
-router.post('/', authenticateToken, requireStaff, createProduct);
+router.post('/', authenticateToken, requireStaff, auditLogger('Create Product', 'Inventory', 'Product created'), createProduct);
 
 /**
  * PUT /api/products/:id
@@ -133,7 +134,7 @@ router.post('/', authenticateToken, requireStaff, createProduct);
  * - authenticateToken: Verifies JWT token
  * - requireStaff: Ensures only staff can update products
  */
-router.put('/:id', authenticateToken, requireStaff, updateProduct);
+router.put('/:id', authenticateToken, requireStaff, auditLogger('Update Product', 'Inventory', 'Product updated'), updateProduct);
 
 /**
  * DELETE /api/products/:id
@@ -152,7 +153,7 @@ router.put('/:id', authenticateToken, requireStaff, updateProduct);
  * - authenticateToken: Verifies JWT token
  * - requireStaff: Ensures only staff can delete products
  */
-router.delete('/:id', authenticateToken, requireStaff, deleteProduct);
+router.delete('/:id', authenticateToken, requireStaff, auditLogger('Delete Product', 'Inventory', 'Product deleted'), deleteProduct);
 
 /**
  * PUT /api/products/:id/stock
@@ -178,6 +179,6 @@ router.delete('/:id', authenticateToken, requireStaff, deleteProduct);
  * - authenticateToken: Verifies JWT token
  * - requireStaff: Ensures only staff can update stock
  */
-router.put('/:id/stock', authenticateToken, requireStaff, updateStock);
+router.put('/:id/stock', authenticateToken, requireStaff, auditLogger('Update Stock', 'Inventory', 'Stock adjusted'), updateStock);
 
 module.exports = router;

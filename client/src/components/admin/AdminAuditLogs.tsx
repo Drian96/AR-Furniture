@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search, Filter, Calendar, User, Activity, Shield, Eye, X } from 'lucide-react';
 import { getAuditLogs, AuditLogItem } from '../../services/api';
 
-// Audit logs component for admin
-// TODO: When backend is connected, fetch real audit logs from your Express API
+// Audit logs component for admin (uses live data from backend)
 const AdminAuditLogs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('All');
@@ -28,9 +27,10 @@ const AdminAuditLogs = () => {
   };
 
   useEffect(() => {
+    // Fetch logs whenever filters or search term change
     loadLogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFilter, selectedDateRange]);
+  }, [selectedFilter, selectedDateRange, searchTerm]);
 
   // Get icon for activity category
   const getCategoryIcon = (category: string) => {
@@ -69,8 +69,7 @@ const AdminAuditLogs = () => {
         <p className="text-dgray mt-1">Track all system activities and user actions</p>
       </div>
 
-      {/* Activity Overview */}
-      {/* TODO: When backend is ready, calculate real statistics */}
+      {/* Activity Overview (derived from loaded logs) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg p-6 shadow-sm border border-sage-light">
           <div className="flex items-center gap-3">
@@ -198,7 +197,7 @@ const AdminAuditLogs = () => {
                       onClick={() => setSelectedLog(log)}
                       className="text-blue-600 hover:text-blue-800"
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4 cursor-pointer hover:scale-110" />
                     </button>
                   </td>
                 </tr>
@@ -210,7 +209,7 @@ const AdminAuditLogs = () => {
 
       {/* Log Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-dgreen">Audit Log Details</h2>
@@ -218,7 +217,7 @@ const AdminAuditLogs = () => {
                 onClick={() => setSelectedLog(null)}
                 className="text-dgray hover:text-dgreen"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 cursor-pointer" />
               </button>
             </div>
 

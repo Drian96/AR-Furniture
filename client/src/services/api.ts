@@ -689,8 +689,28 @@ export const getAuditLogs = async (params: { q?: string; category?: string; peri
   if (params.category) query.set('category', params.category);
   if (params.period) query.set('period', params.period);
   const qs = query.toString();
-  const response = await apiRequest<AuditLogItem[]>(`/admin/audit-logs${qs ? `?${qs}` : ''}`);
-  if (response.success && response.data) return response.data as unknown as AuditLogItem[];
+
+  // Raw response from API (matches DB column names)
+  const response = await apiRequest<any[]>(`/admin/audit-logs${qs ? `?${qs}` : ''}`);
+
+  if (response.success && response.data) {
+    // Map snake_case fields from backend into the frontend-friendly AuditLogItem shape
+    const mapped: AuditLogItem[] = (response.data as any[]).map((log) => ({
+      id: log.id,
+      timestamp: log.timestamp,
+      user: log.user,
+      action: log.action,
+      category: log.category,
+      description: log.description,
+      ipAddress: log.ipAddress ?? log.ip_address,
+      userAgent: log.userAgent ?? log.user_agent,
+      success: log.success,
+      details: log.details,
+    }));
+
+    return mapped;
+  }
+
   throw new Error(response.message || 'Failed to load audit logs');
 };
 

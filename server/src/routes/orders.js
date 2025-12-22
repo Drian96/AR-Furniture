@@ -11,6 +11,7 @@ const {
 
 // Import authentication middleware
 const { authenticateToken } = require('../middleware/auth');
+const { auditLogger } = require('../middleware/auditLogger');
 
 // ============================================================================
 // ORDER ROUTES
@@ -54,7 +55,7 @@ const { authenticateToken } = require('../middleware/auth');
  * Middleware:
  * - authenticateToken: Verifies JWT token
  */
-router.post('/', authenticateToken, createOrder);
+router.post('/', authenticateToken, auditLogger('Create Order', 'Orders', 'Order placed'), createOrder);
 
 /**
  * GET /api/orders/user/:userId
@@ -150,6 +151,6 @@ router.get('/:id', authenticateToken, getOrderById);
  * Middleware:
  * - authenticateToken: Verifies JWT token
  */
-router.put('/:id/status', authenticateToken, updateOrderStatus);
+router.put('/:id/status', authenticateToken, auditLogger('Update Order Status', 'Orders', 'Order status changed'), updateOrderStatus);
 
 module.exports = router;

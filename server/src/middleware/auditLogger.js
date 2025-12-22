@@ -28,7 +28,8 @@ const auditLogger = (action, category, description) => {
  */
 const logAuditAction = async (req, action, category, description, responseData) => {
   try {
-    const userEmail = req.user?.email || 'anonymous';
+    // Prefer authenticated user email; fall back to incoming email (e.g., login) or anonymous
+    const userEmail = req.user?.email || req.body?.email || 'anonymous';
     const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
     const userAgent = req.get('User-Agent') || 'unknown';
     const success = responseData?.success !== false; // Default to true unless explicitly false

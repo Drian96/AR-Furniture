@@ -4,6 +4,7 @@ import { CartProvider } from './contexts/CartContext';
 import { CartAnimationProvider } from './contexts/CartAnimationContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import FlyingItem from './components/Cart/FlyingItem';
+import TawkToManager from './components/TawkToManager';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
@@ -27,6 +28,8 @@ const App = () => {
       <CartProvider>
         <NotificationProvider>
           <CartAnimationProvider>
+            {/* Tawk.to chat widget manager - controls visibility and user info */}
+            <TawkToManager />
             {/* Flying item animation component - renders when add to cart is clicked */}
             <FlyingItem />
             <Routes>

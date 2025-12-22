@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken, requireRole } = require('../middleware/auth');
+const { auditLogger } = require('../middleware/auditLogger');
 const {
   getUserAddresses,
   createAddress,
@@ -17,16 +18,16 @@ router.use(authenticateToken);
 router.get('/', getUserAddresses);
 
 // POST /api/addresses - Create a new address
-router.post('/', createAddress);
+router.post('/', auditLogger('Add Address', 'User Management', 'User added address'), createAddress);
 
 // PUT /api/addresses/:id - Update an existing address
-router.put('/:id', updateAddress);
+router.put('/:id', auditLogger('Update Address', 'User Management', 'User updated address'), updateAddress);
 
 // DELETE /api/addresses/:id - Delete an address
-router.delete('/:id', deleteAddress);
+router.delete('/:id', auditLogger('Delete Address', 'User Management', 'User deleted address'), deleteAddress);
 
 // PUT /api/addresses/:id/default - Set an address as default
-router.put('/:id/default', setDefaultAddress);
+router.put('/:id/default', auditLogger('Set Default Address', 'User Management', 'User set default address'), setDefaultAddress);
 
 // GET /api/addresses/user/:userId - Get addresses for a specific user (admin function)
 router.get('/user/:userId', requireRole(['admin', 'manager', 'staff']), getAddressesByUserId);

@@ -15,6 +15,7 @@ const {
   resetPassword,
   oauthCallback
 } = require('../controllers/authController');
+const { auditLogger } = require('../middleware/auditLogger');
 
 // Import authentication middleware
 const {
@@ -61,7 +62,7 @@ const {
  *   }
  * }
  */
-router.post('/register', registerValidation, register);
+router.post('/register', registerValidation, auditLogger('Register', 'Authentication', 'User registration attempt'), register);
 
 /**
  * POST /api/auth/login
@@ -83,7 +84,7 @@ router.post('/register', registerValidation, register);
  *   }
  * }
  */
-router.post('/login', loginValidation, login);
+router.post('/login', loginValidation, auditLogger('Login', 'Authentication', 'User login attempt'), login);
 
 /**
  * GET /api/auth/profile
@@ -106,10 +107,8 @@ router.post('/login', loginValidation, login);
  * 
  * Middleware:
  * - authenticateToken: Verifies JWT token and attaches user to req.user
- * - requireCustomer: Ensures only customers can access this route
  */
-// Allow staff (admin, manager, staff) to access profile
-router.get('/profile', authenticateToken, requireStaff, getProfile);
+router.get('/profile', authenticateToken, getProfile);
 
 /**
  * PUT /api/auth/profile
@@ -140,13 +139,12 @@ router.get('/profile', authenticateToken, requireStaff, getProfile);
  * 
  * Middleware:
  * - authenticateToken: Verifies JWT token and attaches user to req.user
- * - requireCustomer: Ensures only customers can access this route
  * - profileUpdateValidation: Validates the update data
  */
 router.put('/profile', 
   authenticateToken, 
-  requireStaff, 
   profileUpdateValidation, 
+  auditLogger('Update Profile', 'User Management', 'User updated profile'),
   updateProfile
 );
 
@@ -177,6 +175,7 @@ router.put('/profile',
 router.post('/change-password',
   authenticateToken,
   changePasswordValidation,
+  auditLogger('Change Password', 'Authentication', 'User changed password'),
   changePassword
 );
 
@@ -201,7 +200,7 @@ router.post('/change-password',
  * - authenticateToken: Verifies JWT token and attaches user to req.user
  * - requireCustomer: Ensures only customers can access this route
  */
-router.post('/logout', authenticateToken, requireCustomer, logout);
+router.post('/logout', authenticateToken, requireCustomer, auditLogger('Logout', 'Authentication', 'User logged out'), logout);
 
 /**
  * GET /api/auth/verify
