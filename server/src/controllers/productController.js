@@ -131,20 +131,28 @@ exports.createProduct = async (req, res) => {
       description
     } = req.body;
 
-    console.log('🔄 Creating new product...');
+    console.log('🔄 Creating new product...', { name, category, supplier, price, quantity });
 
     // Validate required fields
-    if (!name || !category || !supplier || !price || quantity === undefined) {
+    if (!name || !category || !supplier || price === undefined || quantity === undefined) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields: name, category, supplier, price, quantity'
       });
     }
 
-    const [newProduct] = await sequelize.query(
+    // Validate price and quantity are numbers
+    if (isNaN(price) || isNaN(quantity)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Price and quantity must be valid numbers'
+      });
+    }
+
+    const result = await sequelize.query(
       `INSERT INTO public.products 
-       (name, code, category, supplier, price, quantity, min_stock, description, status, created_at, updated_at)
-       VALUES (:name, :code, :category, :supplier, :price, :quantity, :min_stock, :description, 'active', NOW(), NOW())
+       (name, code, category, supplier, price, quantity, min_stock, description, created_at, updated_at)
+       VALUES (:name, :code, :category, :supplier, :price, :quantity, :min_stock, :description, NOW(), NOW())
        RETURNING *`,
       { 
         type: QueryTypes.SELECT,
@@ -153,13 +161,20 @@ exports.createProduct = async (req, res) => {
           code: code || null,
           category,
           supplier,
-          price,
-          quantity,
-          min_stock: min_stock || 0,
+          price: parseFloat(price),
+          quantity: parseInt(quantity),
+          min_stock: min_stock ? parseInt(min_stock) : 0,
           description: description || null
         }
       }
     );
+
+    // Handle result - sequelize.query with RETURNING returns an array
+    const newProduct = Array.isArray(result) && result.length > 0 ? result[0] : result;
+
+    if (!newProduct) {
+      throw new Error('Failed to retrieve created product');
+    }
 
     // Calculate status
     newProduct.status = newProduct.quantity === 0 ? 'Out of Stock' : 
@@ -175,9 +190,11 @@ exports.createProduct = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Create product error:', error.message);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Failed to create product'
+      message: 'Failed to create product',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

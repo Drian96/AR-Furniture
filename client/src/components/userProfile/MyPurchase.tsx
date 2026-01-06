@@ -215,12 +215,12 @@ const MyPurchase = () => {
 
       {/* Status Tabs */}
       <div className="border-b border-lgray mb-6">
-        <div className="flex space-x-8">
+        <div className="flex space-x-4 md:space-x-8 overflow-x-auto scroll-smooth pb-2 -mb-2" style={{ scrollbarWidth: 'thin', WebkitOverflowScrolling: 'touch' }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap flex-shrink-0 px-1 ${
                 activeTab === tab.id
                   ? 'border-dgreen text-dgreen'
                   : 'border-transparent text-dgray hover:text-dgreen'
