@@ -552,7 +552,7 @@ const Checkout = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-dgreen text-white py-3 px-4 rounded-lg font-semibold hover:bg-dgreen/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-dgreen text-white py-3 px-4 rounded-lg font-semibold hover:bg-dgreen/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 {isSubmitting ? 'Processing Order...' : 'Place Order'}
               </button>

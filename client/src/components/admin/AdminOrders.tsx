@@ -511,13 +511,13 @@ const AdminOrders = () => {
                   <div className="flex gap-2">
                     <button 
                       onClick={() => handleReturnAction(returnReq.id, 'decline')}
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                     >
                       Decline
                     </button>
                     <button 
                       onClick={() => handleReturnAction(returnReq.id, 'approve')}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
                     >
                       Approve
                     </button>

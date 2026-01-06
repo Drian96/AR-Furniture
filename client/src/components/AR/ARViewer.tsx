@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, RotateCcw, ZoomIn, ZoomOut, Camera } from 'lucide-react';
+import { X, RotateCcw, ZoomIn, ZoomOut, Camera, RefreshCcw } from 'lucide-react';
 
 interface ARViewerProps {
   productImage: string;
@@ -357,7 +357,7 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
             className="p-3 hover:bg-white/20 rounded-full transition-colors cursor-pointer bg-black/50"
             title="Reset"
           >
-            <RotateCcw className="w-5 h-5" />
+            <RefreshCcw className="w-5 h-5" />
           </button>
           
           <button
