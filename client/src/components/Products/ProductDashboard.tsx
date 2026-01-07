@@ -1,14 +1,14 @@
-
+import React, { useState } from 'react';
 import CategoryFilter from './CategoryFilter';
 import ProductGrid from './ProductGrid';
 import SortDropdown from './SortDropdown';
-import { useState } from 'react';
 
-interface ProductDashboardProps {
+export interface ProductDashboardProps {
   searchQuery?: string;
+  initialPage?: number;
 }
 
-const ProductDashboard = ({ searchQuery = '' }: ProductDashboardProps) => {
+const ProductDashboard: React.FC<ProductDashboardProps> = ({ searchQuery = '', initialPage = 1 }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('Most Relevant');
 
@@ -41,6 +41,7 @@ const ProductDashboard = ({ searchQuery = '' }: ProductDashboardProps) => {
         selectedCategory={selectedCategory}
         sortBy={sortBy}
         searchQuery={searchQuery}
+        initialPage={initialPage}
       />
     </div>
   );
