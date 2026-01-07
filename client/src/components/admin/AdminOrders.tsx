@@ -15,6 +15,8 @@ const AdminOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Load orders on component mount
   useEffect(() => {
@@ -41,6 +43,7 @@ const AdminOrders = () => {
     }
 
     setFilteredOrders(filtered);
+    setCurrentPage(1); // Reset to first page whenever filters change
   }, [orders, searchTerm, selectedStatus]);
 
   const loadOrders = async () => {
@@ -85,6 +88,16 @@ const AdminOrders = () => {
     } finally {
       setLoadingOrderItems(false);
     }
+  };
+
+  // Pagination helpers
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const pagedOrders = filteredOrders.slice(startIndex, startIndex + pageSize);
+  const goToPage = (page: number) => {
+    const next = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(next);
   };
 
   // State for return management
@@ -215,7 +228,7 @@ const AdminOrders = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map((order) => (
+                {pagedOrders.map((order) => (
                   <tr key={order.id} className="border-b border-sage-light hover:bg-cream">
                     <td className="py-3 px-4 text-dgreen font-medium">{order.order_number}</td>
                     <td className="py-3 px-4 text-dgray">
@@ -306,6 +319,28 @@ const AdminOrders = () => {
             </table>
           )}
         </div>
+        {/* Pagination Controls */}
+        {!loading && filteredOrders.length > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <button
+              onClick={() => goToPage(safeCurrentPage - 1)}
+              disabled={safeCurrentPage <= 1}
+              className={`px-4 py-2 rounded-lg border cursor-pointer ${safeCurrentPage <= 1 ? 'text-gray-400 border-gray-200' : 'text-dgreen border-dgreen hover:bg-dgreen hover:text-white'}`}
+            >
+              Previous
+            </button>
+            <span className="text-dgray">
+              Page {safeCurrentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => goToPage(safeCurrentPage + 1)}
+              disabled={safeCurrentPage >= totalPages}
+              className={`px-4 py-2 rounded-lg border cursor-pointer ${safeCurrentPage >= totalPages ? 'text-gray-400 border-gray-200' : 'text-dgreen border-dgreen hover:bg-dgreen hover:text-white'}`}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Order Details Modal */}

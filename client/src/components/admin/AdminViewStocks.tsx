@@ -15,6 +15,8 @@ const AdminViewStocks = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Real data state
   const [products, setProducts] = useState<Product[]>([]);
@@ -217,6 +219,21 @@ const AdminViewStocks = () => {
       return matchesSearch && matchesCategory && matchesStatus;
     });
   }, [products, searchTerm, selectedCategory, selectedStatus]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedStatus]);
+
+  // Pagination helpers
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const pagedProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
+  const goToPage = (page: number) => {
+    const next = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(next);
+  };
 
   // Create new product
   const handleAddItem = async (formData: NewProductData, imageFiles: File[]) => {
@@ -450,7 +467,7 @@ const AdminViewStocks = () => {
               </tr>
             </thead>
             <tbody>
-                {filteredProducts.map((item) => (
+                {pagedProducts.map((item) => (
                 <tr key={item.id} className="border-b border-sage-light hover:bg-cream">
                   <td className="py-3 px-4 text-dgreen font-medium">{item.name}</td>
                     <td className="py-3 px-4 text-dgray">{item.code || 'N/A'}</td>
@@ -491,6 +508,28 @@ const AdminViewStocks = () => {
           </table>
           )}
         </div>
+        {/* Pagination Controls */}
+        {!isLoading && filteredProducts.length > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <button
+              onClick={() => goToPage(safeCurrentPage - 1)}
+              disabled={safeCurrentPage <= 1}
+              className={`px-4 py-2 rounded-lg border cursor-pointer ${safeCurrentPage <= 1 ? 'text-gray-400 border-gray-200' : 'text-dgreen border-dgreen hover:bg-dgreen hover:text-white'}`}
+            >
+              Previous
+            </button>
+            <span className="text-dgray">
+              Page {safeCurrentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => goToPage(safeCurrentPage + 1)}
+              disabled={safeCurrentPage >= totalPages}
+              className={`px-4 py-2 rounded-lg border cursor-pointer ${safeCurrentPage >= totalPages ? 'text-gray-400 border-gray-200' : 'text-dgreen border-dgreen hover:bg-dgreen hover:text-white'}`}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Add New Item Modal */}

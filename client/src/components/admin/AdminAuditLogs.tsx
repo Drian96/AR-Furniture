@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Search, Filter, Calendar, User, Activity, Shield, Eye, X } from 'lucide-react';
 import { getAuditLogs, AuditLogItem } from '../../services/api';
 
@@ -13,23 +13,85 @@ const AdminAuditLogs = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ref to prevent multiple simultaneous API calls
+  const isLoadingRef = useRef(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasMountedRef = useRef(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const loadLogs = async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoadingRef.current) {
+      return;
+    }
+    
     try {
+      isLoadingRef.current = true;
       setLoading(true);
+      setError(null);
       const logs = await getAuditLogs({ q: searchTerm, category: selectedFilter, period: selectedDateRange === 'Today' ? 'day' : selectedDateRange === 'Last 7 days' ? 'week' : selectedDateRange === 'Last 30 days' ? 'month' : 'year' });
       setAuditLogs(logs);
     } catch (e: any) {
       setError(e.message || 'Failed to load audit logs');
+      // If rate limited, show empty state
+      if (e?.message?.includes('Too many requests')) {
+        setAuditLogs([]);
+      }
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
   };
 
+  // Initial load on mount
   useEffect(() => {
-    // Fetch logs whenever filters or search term change
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      loadLogs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Separate effect for search term with debounce (only after initial mount)
+  useEffect(() => {
+    if (!hasMountedRef.current) return;
+    
+    // Clear any existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Debounce search term changes to avoid too many API calls
+    debounceTimerRef.current = setTimeout(() => {
+      loadLogs();
+    }, 500); // Wait 500ms after user stops typing
+
+    // Cleanup function
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
+
+  // Separate effect for filter changes (load immediately, only after initial mount)
+  useEffect(() => {
+    if (!hasMountedRef.current) return;
+    
+    // Clear search debounce if filter changes
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
     loadLogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFilter, selectedDateRange]);
+
+  // Reset to first page when filters or search term change
+  useEffect(() => {
+    setCurrentPage(1);
   }, [selectedFilter, selectedDateRange, searchTerm]);
 
   // Get icon for activity category
@@ -60,6 +122,16 @@ const AdminAuditLogs = () => {
         !log.user.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
+
+  // Pagination helpers
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const pagedLogs = filteredLogs.slice(startIndex, startIndex + pageSize);
+  const goToPage = (page: number) => {
+    const next = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(next);
+  };
 
   return (
     <div className="space-y-6">
@@ -175,7 +247,20 @@ const AdminAuditLogs = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.map((log) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-dgray">Loading logs...</td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-red-600">{error}</td>
+                </tr>
+              ) : pagedLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-dgray">No audit logs found.</td>
+                </tr>
+              ) : (
+                pagedLogs.map((log) => (
                 <tr key={log.id} className="border-b border-sage-light hover:bg-cream">
                   <td className="py-3 px-4 text-sm text-dgray">{log.timestamp}</td>
                   <td className="py-3 px-4 text-sm text-dgreen font-medium">{log.user}</td>
@@ -201,10 +286,33 @@ const AdminAuditLogs = () => {
                     </button>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
+        {/* Pagination Controls */}
+        {!loading && filteredLogs.length > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <button
+              onClick={() => goToPage(safeCurrentPage - 1)}
+              disabled={safeCurrentPage <= 1}
+              className={`px-4 py-2 rounded-lg border cursor-pointer ${safeCurrentPage <= 1 ? 'text-gray-400 border-gray-200' : 'text-dgreen border-dgreen hover:bg-dgreen hover:text-white'}`}
+            >
+              Previous
+            </button>
+            <span className="text-dgray">
+              Page {safeCurrentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => goToPage(safeCurrentPage + 1)}
+              disabled={safeCurrentPage >= totalPages}
+              className={`px-4 py-2 rounded-lg border cursor-pointer ${safeCurrentPage >= totalPages ? 'text-gray-400 border-gray-200' : 'text-dgreen border-dgreen hover:bg-dgreen hover:text-white'}`}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Log Detail Modal */}
@@ -258,8 +366,6 @@ const AdminAuditLogs = () => {
           </div>
         </div>
       )}
-      {loading && <p className="text-dgray">Loading logs...</p>}
-      {error && <p className="text-red-600">{error}</p>}
     </div>
   );
 };

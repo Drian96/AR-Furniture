@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Eye, Edit, Trash2, X, CheckCircle, MapPin } from 'lucide-react';
 import { adminListUsers, adminUpdateUser, adminDeleteUser, getAddressesByUserId, getCustomerOrders } from '../../services/api';
 
@@ -17,6 +17,11 @@ const AdminCustomer = () => {
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [customerOrderStats, setCustomerOrderStats] = useState<any>(null);
   const [loadingOrderStats, setLoadingOrderStats] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  
+  // Ref to prevent multiple simultaneous API calls
+  const isLoadingRef = useRef(false);
 
   // Edit customer form state
   const [editCustomer, setEditCustomer] = useState({
@@ -27,9 +32,45 @@ const AdminCustomer = () => {
     address: ''
   });
 
+  // Helper function to batch process with delays to avoid rate limiting
+  const processBatch = async <T, R>(
+    items: T[],
+    processor: (item: T) => Promise<R>,
+    batchSize: number = 5,
+    delayMs: number = 200
+  ): Promise<R[]> => {
+    const results: R[] = [];
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(async (item) => {
+          try {
+            return await processor(item);
+          } catch (err) {
+            console.error('Batch processing error:', err);
+            throw err;
+          }
+        })
+      );
+      results.push(...batchResults);
+      
+      // Add delay between batches (except for the last batch)
+      if (i + batchSize < items.length) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+    return results;
+  };
+
   // Fetch customers with basic info plus derived order stats
   const loadCustomersWithStats = async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoadingRef.current) {
+      return;
+    }
+    
     try {
+      isLoadingRef.current = true;
       setLoading(true);
       const data = await adminListUsers();
       const customerUsers = data.users.filter((u: any) => u.role === 'customer');
@@ -51,9 +92,11 @@ const AdminCustomer = () => {
 
       setCustomers(baseCustomers);
 
-      // Fetch per-customer order stats in parallel
-      const customersWithStats = await Promise.all(
-        baseCustomers.map(async (customer) => {
+      // Fetch per-customer order stats in batches to avoid rate limiting
+      // Process 5 customers at a time with 200ms delay between batches
+      const customersWithStats = await processBatch(
+        baseCustomers,
+        async (customer) => {
           try {
             const stats = await getCustomerOrders(customer.id);
             return {
@@ -65,7 +108,12 @@ const AdminCustomer = () => {
                 : 'No orders yet'
             };
           } catch (err) {
-            console.error(`Failed to load stats for customer ${customer.id}:`, err);
+            // If rate limited, return default values
+            if ((err as any)?.message?.includes('Too many requests')) {
+              console.warn(`Rate limited for customer ${customer.id}, using default values`);
+            } else {
+              console.error(`Failed to load stats for customer ${customer.id}:`, err);
+            }
             return {
               ...customer,
               orders: 0,
@@ -73,14 +121,22 @@ const AdminCustomer = () => {
               lastOrder: 'No orders yet'
             };
           }
-        })
+        },
+        5, // Process 5 at a time
+        200 // 200ms delay between batches
       );
 
       setCustomers(customersWithStats);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load customers:', error);
+      // If the initial request fails due to rate limiting, show empty state
+      if (error?.message?.includes('Too many requests')) {
+        setCustomers([]);
+        alert('Too many requests. Please wait a moment and refresh the page.');
+      }
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
   };
 
@@ -96,6 +152,21 @@ const AdminCustomer = () => {
                          customer.phone.includes(searchTerm);
     return matchesSearch;
   });
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Pagination helpers
+  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const pagedCustomers = filteredCustomers.slice(startIndex, startIndex + pageSize);
+  const goToPage = (page: number) => {
+    const next = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(next);
+  };
 
   // Fetch customer details including addresses and order statistics
   const handleViewCustomer = async (customer: any) => {
@@ -274,7 +345,7 @@ const AdminCustomer = () => {
                   <td colSpan={7} className="py-8 text-center text-dgray">Loading customers...</td>
                 </tr>
               ) : filteredCustomers.length > 0 ? (
-                filteredCustomers.map((customer) => (
+                pagedCustomers.map((customer) => (
                   <tr key={customer.id} className="border-b border-sage-light hover:bg-cream">
                     <td className="py-3 px-4 text-dgreen font-medium">{customer.name}</td>
                     <td className="py-3 px-4 text-dgray">{customer.email}</td>
@@ -322,6 +393,28 @@ const AdminCustomer = () => {
             </tbody>
           </table>
         </div>
+        {/* Pagination Controls */}
+        {!loading && filteredCustomers.length > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <button
+              onClick={() => goToPage(safeCurrentPage - 1)}
+              disabled={safeCurrentPage <= 1}
+              className={`px-4 py-2 rounded-lg border cursor-pointer ${safeCurrentPage <= 1 ? 'text-gray-400 border-gray-200' : 'text-dgreen border-dgreen hover:bg-dgreen hover:text-white'}`}
+            >
+              Previous
+            </button>
+            <span className="text-dgray">
+              Page {safeCurrentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => goToPage(safeCurrentPage + 1)}
+              disabled={safeCurrentPage >= totalPages}
+              className={`px-4 py-2 rounded-lg border cursor-pointer ${safeCurrentPage >= totalPages ? 'text-gray-400 border-gray-200' : 'text-dgreen border-dgreen hover:bg-dgreen hover:text-white'}`}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Customer Details Modal */}
