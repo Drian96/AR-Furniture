@@ -6,6 +6,7 @@ import { productService, reviewService, type Product as DbProduct, type ProductI
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCartAnimation } from '../../contexts/CartAnimationContext';
+import { isInWishlist, toggleWishlist } from '../../utils/wishlist';
 import ARViewer from '../AR/ARViewer';
 
 const ProductDetail = () => {
@@ -18,6 +19,8 @@ const ProductDetail = () => {
   const [reviewStats, setReviewStats] = useState<ProductReviewStats | null>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [showAR, setShowAR] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
   const { triggerAnimation } = useCartAnimation();
@@ -31,6 +34,9 @@ const ProductDetail = () => {
       if (p) {
         setProduct(p);
         setImages(await productService.getProductImages(p.id));
+        
+        // Check if product is in wishlist
+        setIsWishlisted(isInWishlist(p.id));
         
         // Load reviews
         setLoadingReviews(true);
@@ -58,6 +64,69 @@ const ProductDetail = () => {
       setQuantity(quantity + 1);
     } else if (action === 'decrease' && quantity > 1) {
       setQuantity(quantity - 1);
+    }
+  };
+
+  const handleQuantityInput = (value: string) => {
+    // Allow empty string while typing
+    if (value === '') {
+      setQuantity(1);
+      return;
+    }
+    
+    const numValue = parseInt(value, 10);
+    if (isNaN(numValue) || numValue < 1) {
+      setQuantity(1);
+    } else {
+      const maxQuantity = product?.quantity ?? 0;
+      setQuantity(numValue > maxQuantity ? maxQuantity : numValue);
+    }
+  };
+
+  const handleWishlistToggle = () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    const newState = toggleWishlist(product.id);
+    setIsWishlisted(newState);
+  };
+
+  const handleShare = async () => {
+    if (!product) return;
+    
+    const productUrl = `${window.location.origin}/products/${product.id}`;
+    const shareData = {
+      title: product.name,
+      text: `Check out ${product.name} - ₱${product.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+      url: productUrl,
+    };
+
+    try {
+      // Try Web Share API first (mobile-friendly)
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        setShareSuccess(true);
+        setTimeout(() => setShareSuccess(false), 2000);
+        return;
+      }
+    } catch (error) {
+      // User cancelled or error occurred, fall through to clipboard
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Share failed:', error);
+      }
+    }
+
+    // Fallback to clipboard
+    try {
+      await navigator.clipboard.writeText(productUrl);
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Last resort: show URL in alert
+      alert(`Share this product: ${productUrl}`);
     }
   };
 
@@ -211,13 +280,27 @@ const ProductDetail = () => {
                 <button
                   onClick={() => handleQuantityChange('decrease')}
                   className="px-4 py-2 text-dgreen hover:bg-lgreen hover:text-cream transition-colors"
+                  type="button"
                 >
                   -
                 </button>
-                <span className="px-4 py-2 font-medium">{quantity}</span>
+                <input
+                  type="number"
+                  min="1"
+                  max={product?.quantity ?? 1}
+                  value={quantity}
+                  onChange={(e) => handleQuantityInput(e.target.value)}
+                  onBlur={(e) => {
+                    if (e.target.value === '' || parseInt(e.target.value, 10) < 1) {
+                      setQuantity(1);
+                    }
+                  }}
+                  className="w-20 px-2 py-2 text-center font-medium border-0 focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
                 <button
                   onClick={() => handleQuantityChange('increase')}
                   className="px-4 py-2 text-dgreen hover:bg-lgreen hover:text-cream transition-colors"
+                  type="button"
                 >
                   +
                 </button>
@@ -247,13 +330,25 @@ const ProductDetail = () => {
 
             {/* Additional Actions */}
             <div className="flex items-center space-x-6 pt-4 border-t border-lgray">
-              <button className="flex items-center space-x-2 text-dgray hover:text-dgreen transition-colors">
-                <Heart className="w-5 h-5" />
-                <span>Add to Wishlist</span>
+              <button 
+                onClick={handleWishlistToggle}
+                className={`flex items-center space-x-2 transition-colors cursor-pointer ${
+                  isWishlisted 
+                    ? 'text-red-600 hover:text-red-700' 
+                    : 'text-dgray hover:text-dgreen'
+                }`}
+              >
+                <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                <span>{isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}</span>
               </button>
-              <button className="flex items-center space-x-2 text-dgray hover:text-dgreen transition-colors">
+              <button 
+                onClick={handleShare}
+                className={`flex items-center space-x-2 text-dgray hover:text-dgreen transition-colors cursor-pointer ${
+                  shareSuccess ? 'text-green-600' : ''
+                }`}
+              >
                 <Share2 className="w-5 h-5" />
-                <span>Share</span>
+                <span>{shareSuccess ? 'Copied!' : 'Share'}</span>
               </button>
             </div>
           </div>
