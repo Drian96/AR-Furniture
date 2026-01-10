@@ -4,6 +4,8 @@ import { productService, type Product as DbProduct, type ProductImage } from '..
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCartAnimation } from '../../contexts/CartAnimationContext';
+import { is3DModel } from '../../utils/modelUtils';
+import Model3DViewer from './Model3DViewer';
 
 interface ProductGridProps {
   selectedCategory: string;
@@ -132,15 +134,38 @@ const ProductGrid = ({ selectedCategory, sortBy, searchQuery = '', initialPage =
                 {(() => {
                   const imgs = imagesByProduct[product.id];
                   const src = imgs && imgs.length > 0 ? imgs[0].image_url : '';
+                  
+                  // Check if the first image is a 3D model
+                  if (src && is3DModel(src)) {
+                    return (
+                      <div className="w-full h-64 relative">
+                        <Model3DViewer 
+                          modelUrl={src}
+                          className="w-full h-full"
+                          autoRotate={true}
+                          enableControls={false}
+                          rotationSpeed={0.3}
+                        />
+                        <div className="absolute top-2 right-2">
+                          <span className="bg-dgreen text-cream px-2 py-1 rounded text-xs font-medium">
+                            3D Model
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
                   return (
-                    <img 
-                      src={src}
-                      alt={product.name}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <>
+                      <img 
+                        src={src}
+                        alt={product.name}
+                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-opacity-20 transition-all duration-300"></div>
+                    </>
                   );
                 })()}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-opacity-20 transition-all duration-300"></div>
                 <div className="absolute top-4 right-4">
                   <span className="bg-lgreen text-cream px-3 py-1 rounded-full text-sm font-medium">
                     {product.category}

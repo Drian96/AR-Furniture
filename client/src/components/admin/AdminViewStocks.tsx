@@ -71,14 +71,44 @@ const AdminViewStocks = () => {
   // Track images the user marked for deletion during this edit session
   const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
 
-  // Derived previews for images
+  // Helper function to detect if file is a 3D model
+  const is3DModel = (file: File): boolean => {
+    const fileName = file.name.toLowerCase();
+    return fileName.endsWith('.glb') || fileName.endsWith('.gltf');
+  };
+
+  // Derived previews for images and 3D models
   const imagePreviews = useMemo(() => {
-    return newItemForm.images.map((file) => URL.createObjectURL(file));
+    return newItemForm.images.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+      is3D: is3DModel(file)
+    }));
   }, [newItemForm.images]);
 
   const editImagePreviews = useMemo(() => {
-    return editForm.images.map((file) => URL.createObjectURL(file));
+    return editForm.images.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+      is3D: is3DModel(file)
+    }));
   }, [editForm.images]);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(preview => {
+        if (preview.url) {
+          URL.revokeObjectURL(preview.url);
+        }
+      });
+      editImagePreviews.forEach(preview => {
+        if (preview.url) {
+          URL.revokeObjectURL(preview.url);
+        }
+      });
+    };
+  }, [imagePreviews, editImagePreviews]);
 
   // Fetch products from backend API and images from Supabase
   const fetchProducts = async () => {
@@ -179,6 +209,11 @@ const AdminViewStocks = () => {
   };
 
   const removeImageAtIndex = (index: number) => {
+    // Revoke object URL before removing
+    const preview = imagePreviews[index];
+    if (preview && preview.url) {
+      URL.revokeObjectURL(preview.url);
+    }
     setNewItemForm((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
@@ -186,6 +221,11 @@ const AdminViewStocks = () => {
   };
 
   const removeEditImageAtIndex = (index: number) => {
+    // Revoke object URL before removing
+    const preview = editImagePreviews[index];
+    if (preview && preview.url) {
+      URL.revokeObjectURL(preview.url);
+    }
     setEditForm((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
@@ -640,26 +680,35 @@ const AdminViewStocks = () => {
               </div>
 
 
-              {/* Images upload */}
+              {/* Images and 3D Models upload */}
               <div>
-                <label className="block text-sm font-medium text-dgreen mb-1">Product Images</label>
+                <label className="block text-sm font-medium text-dgreen mb-1">Product Images / 3D Models</label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.glb,.gltf"
                   multiple
                   onChange={(e) => handleImageChange(e.target.files)}
                   className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sage-light file:text-dgreen"
                 />
+                <p className="text-xs text-dgray mt-1">Supports: Images (JPEG, PNG, WebP) and 3D Models (GLB, GLTF)</p>
                 {imagePreviews.length > 0 && (
                   <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {imagePreviews.map((src, idx) => (
+                    {imagePreviews.map((preview, idx) => (
                       <div key={idx} className="relative group">
-                        <img src={src} alt={`preview-${idx}`} className="w-full h-24 object-cover rounded border border-sage-light" />
+                        {preview.is3D ? (
+                          <div className="w-full h-24 bg-sage-light rounded border border-sage-light flex flex-col items-center justify-center">
+                            <div className="text-2xl mb-1">📦</div>
+                            <p className="text-xs text-dgreen font-medium truncate w-full px-1 text-center">{preview.file.name}</p>
+                            <span className="text-xs text-dgray">3D Model</span>
+                          </div>
+                        ) : (
+                          <img src={preview.url} alt={`preview-${idx}`} className="w-full h-24 object-cover rounded border border-sage-light" />
+                        )}
                         <button
                           type="button"
                           onClick={() => removeImageAtIndex(idx)}
                           className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                          aria-label="Remove image"
+                          aria-label="Remove file"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -813,57 +862,90 @@ const AdminViewStocks = () => {
               </div>
 
 
-              {/* Existing Images Display */}
+              {/* Existing Images / 3D Models Display */}
               {productImages[selectedItem.id] && productImages[selectedItem.id].length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-dgreen mb-1">Current Images</label>
+                  <label className="block text-sm font-medium text-dgreen mb-1">Current Images / 3D Models</label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                     {productImages[selectedItem.id]
                       .filter((img) => !removedImageIds.includes(img.id))
-                      .map((image, idx) => (
-                      <div key={image.id} className="relative group">
-                        <img 
-                          src={image.image_url} 
-                          alt={`Product ${idx + 1}`} 
-                          className="w-full h-24 object-cover rounded border border-sage-light" 
-                        />
-                        {image.is_primary && (
-                          <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1 rounded">Primary</span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setRemovedImageIds((prev) => [...prev, image.id])}
-                          className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                          title="Remove image"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                      .map((image, idx) => {
+                        const is3DModelUrl = image.image_url.toLowerCase().endsWith('.glb') || image.image_url.toLowerCase().endsWith('.gltf');
+                        return (
+                          <div key={image.id} className="relative group">
+                            {is3DModelUrl ? (
+                              <div className="w-full h-24 bg-sage-light rounded border border-sage-light flex flex-col items-center justify-center">
+                                <div className="text-2xl mb-1">📦</div>
+                                <span className="text-xs text-dgray">3D Model</span>
+                              </div>
+                            ) : (
+                              <img 
+                                src={image.image_url} 
+                                alt={`Product ${idx + 1}`} 
+                                className="w-full h-24 object-cover rounded border border-sage-light" 
+                                onError={(e) => {
+                                  // If image fails to load, it might be a 3D model
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = `
+                                      <div class="w-full h-24 bg-sage-light rounded border border-sage-light flex flex-col items-center justify-center">
+                                        <div class="text-2xl mb-1">📦</div>
+                                        <span class="text-xs text-dgray">3D Model</span>
+                                      </div>
+                                    `;
+                                  }
+                                }}
+                              />
+                            )}
+                            {image.is_primary && (
+                              <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1 rounded">Primary</span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setRemovedImageIds((prev) => [...prev, image.id])}
+                              className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                              title="Remove file"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}
 
-              {/* Add New Images */}
+              {/* Add New Images / 3D Models */}
               <div>
-                <label className="block text-sm font-medium text-dgreen mb-1">Add New Images</label>
+                <label className="block text-sm font-medium text-dgreen mb-1">Add New Images / 3D Models</label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.glb,.gltf"
                   multiple
                   onChange={(e) => handleEditImageChange(e.target.files)}
                   className="w-full px-3 py-2 border border-sage-light rounded-lg focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sage-light file:text-dgreen cursor-pointer"
                 />
+                <p className="text-xs text-dgray mt-1">Supports: Images (JPEG, PNG, WebP) and 3D Models (GLB, GLTF)</p>
                 {editImagePreviews.length > 0 && (
                   <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {editImagePreviews.map((src, idx) => (
+                    {editImagePreviews.map((preview, idx) => (
                       <div key={idx} className="relative group">
-                        <img src={src} alt={`preview-${idx}`} className="w-full h-24 object-cover rounded border border-sage-light" />
+                        {preview.is3D ? (
+                          <div className="w-full h-24 bg-sage-light rounded border border-sage-light flex flex-col items-center justify-center">
+                            <div className="text-2xl mb-1">📦</div>
+                            <p className="text-xs text-dgreen font-medium truncate w-full px-1 text-center">{preview.file.name}</p>
+                            <span className="text-xs text-dgray">3D Model</span>
+                          </div>
+                        ) : (
+                          <img src={preview.url} alt={`preview-${idx}`} className="w-full h-24 object-cover rounded border border-sage-light" />
+                        )}
                         <button
                           type="button"
                           onClick={() => removeEditImageAtIndex(idx)}
                           className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                          aria-label="Remove image"
+                          aria-label="Remove file"
                         >
                           <X className="w-4 h-4" />
                         </button>

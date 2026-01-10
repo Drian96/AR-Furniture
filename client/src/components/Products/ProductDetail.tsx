@@ -7,7 +7,9 @@ import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCartAnimation } from '../../contexts/CartAnimationContext';
 import { isInWishlist, toggleWishlist } from '../../utils/wishlist';
+import { is3DModel } from '../../utils/modelUtils';
 import ARViewer from '../AR/ARViewer';
+import Model3DViewer from './Model3DViewer';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -221,30 +223,57 @@ const ProductDetail = () => {
           {/* Product Images */}
           <div className="space-y-4">
             <div className="aspect-square overflow-hidden rounded-2xl bg-white shadow-lg">
-                  {product ? (
-                    <img 
-                      src={productImages[selectedImage]}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
+                  {product && productImages[selectedImage] ? (
+                    // Check if the selected image is a 3D model
+                    is3DModel(productImages[selectedImage]) ? (
+                      <Model3DViewer 
+                        modelUrl={productImages[selectedImage]}
+                        className="w-full h-full"
+                        autoRotate={true}
+                        enableControls={true}
+                      />
+                    ) : (
+                      <img 
+                        src={productImages[selectedImage]}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    )
                   ) : null}
             </div>
             <div className="grid grid-cols-4 gap-4">
-                  {productImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`aspect-square rounded-lg overflow-hidden ${
-                    selectedImage === index ? 'ring-2 ring-dgreen' : ''
-                  }`}
-                >
-                  <img 
-                    src={image}
-                        alt={`${product?.name ?? 'product'} ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
+                  {productImages.map((image, index) => {
+                    // Check if this image is a 3D model
+                    const isModel = is3DModel(image);
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImage(index)}
+                        className={`aspect-square rounded-lg overflow-hidden relative ${
+                          selectedImage === index ? 'ring-2 ring-dgreen' : ''
+                        }`}
+                        title={isModel ? '3D Model' : `${product?.name ?? 'product'} ${index + 1}`}
+                      >
+                        {isModel ? (
+                          // Show a placeholder or small preview for 3D models in thumbnails
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <div className="text-center">
+                              <svg className="w-8 h-8 mx-auto mb-1 text-dgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                              </svg>
+                              <span className="text-xs text-dgray">3D</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <img 
+                            src={image}
+                            alt={`${product?.name ?? 'product'} ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
             </div>
           </div>
 

@@ -6,6 +6,36 @@
 import { supabase, PRODUCT_IMAGES_BUCKET, ensureStorageAuth } from './client';
 import type { Product, ProductImage, NewProductData } from './types';
 
+// Helper function to get correct MIME type for file
+const getFileMimeType = (file: File): string => {
+  const fileName = file.name.toLowerCase();
+  
+  // If browser already detected a valid MIME type, use it (for images)
+  if (file.type && file.type !== 'application/octet-stream') {
+    return file.type;
+  }
+  
+  // Map file extensions to correct MIME types
+  if (fileName.endsWith('.glb')) {
+    return 'model/gltf-binary';
+  }
+  if (fileName.endsWith('.gltf')) {
+    return 'model/gltf+json';
+  }
+  if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+    return 'image/jpeg';
+  }
+  if (fileName.endsWith('.png')) {
+    return 'image/png';
+  }
+  if (fileName.endsWith('.webp')) {
+    return 'image/webp';
+  }
+  
+  // Fallback to file.type if available, otherwise undefined
+  return file.type || 'application/octet-stream';
+};
+
 export const productService = {
   // Create a new product with images
   async createProduct(productData: NewProductData, imageFiles: File[]): Promise<{ product: Product; images: ProductImage[] }> {
@@ -38,10 +68,11 @@ export const productService = {
           const fileName = `${Date.now()}-${i}-${file.name}`;
           const filePath = `${productFolder}/${fileName}`;
           
-          // Upload file to Supabase Storage
+          // Upload file to Supabase Storage with correct MIME type
+          const contentType = getFileMimeType(file);
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from(PRODUCT_IMAGES_BUCKET)
-            .upload(filePath, file, { upsert: false, contentType: file.type || undefined });
+            .upload(filePath, file, { upsert: false, contentType });
 
           if (uploadError) {
             console.error(`Failed to upload image ${fileName}:`, uploadError);
@@ -98,9 +129,11 @@ export const productService = {
       const fileName = `${Date.now()}-${i}-${file.name}`;
       const filePath = `${productFolder}/${fileName}`;
 
+      // Upload file with correct MIME type
+      const contentType = getFileMimeType(file);
       const { error: uploadError } = await supabase.storage
         .from(PRODUCT_IMAGES_BUCKET)
-        .upload(filePath, file, { upsert: false, contentType: file.type || undefined });
+        .upload(filePath, file, { upsert: false, contentType });
       if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
       const { data: { publicUrl } } = supabase.storage
