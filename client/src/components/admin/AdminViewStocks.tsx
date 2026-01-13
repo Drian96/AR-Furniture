@@ -872,17 +872,17 @@ const AdminViewStocks = () => {
                       .map((image, idx) => {
                         const is3DModelUrl = image.image_url.toLowerCase().endsWith('.glb') || image.image_url.toLowerCase().endsWith('.gltf');
                         return (
-                          <div key={image.id} className="relative group">
+                      <div key={image.id} className="relative group">
                             {is3DModelUrl ? (
                               <div className="w-full h-24 bg-sage-light rounded border border-sage-light flex flex-col items-center justify-center">
                                 <div className="text-2xl mb-1">📦</div>
                                 <span className="text-xs text-dgray">3D Model</span>
                               </div>
                             ) : (
-                              <img 
-                                src={image.image_url} 
-                                alt={`Product ${idx + 1}`} 
-                                className="w-full h-24 object-cover rounded border border-sage-light" 
+                        <img 
+                          src={image.image_url} 
+                          alt={`Product ${idx + 1}`} 
+                          className="w-full h-24 object-cover rounded border border-sage-light" 
                                 onError={(e) => {
                                   // If image fails to load, it might be a 3D model
                                   const target = e.target as HTMLImageElement;
@@ -897,20 +897,20 @@ const AdminViewStocks = () => {
                                     `;
                                   }
                                 }}
-                              />
+                        />
                             )}
-                            {image.is_primary && (
-                              <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1 rounded">Primary</span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => setRemovedImageIds((prev) => [...prev, image.id])}
-                              className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                        {image.is_primary && (
+                          <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1 rounded">Primary</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setRemovedImageIds((prev) => [...prev, image.id])}
+                          className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
                               title="Remove file"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                         );
                       })}
                   </div>

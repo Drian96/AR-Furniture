@@ -146,8 +146,8 @@ const ProductGrid = ({ selectedCategory, sortBy, searchQuery = '', initialPage =
                           enableControls={false}
                           rotationSpeed={0.3}
                         />
-                        <div className="absolute top-2 right-2">
-                          <span className="bg-dgreen text-cream px-2 py-1 rounded text-xs font-medium">
+                        <div className="absolute top-2 left-2">
+                          <span className="bg-lgreen text-cream px-2 py-1 rounded text-xs font-medium">
                             3D Model
                           </span>
                         </div>
