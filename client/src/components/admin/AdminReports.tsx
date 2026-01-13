@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, TrendingUp, Users, Package } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, Package, Download } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getAdminReports, AdminReportsResponse } from '../../services/api';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Reports and analytics component for admin
 const AdminReports = () => {
@@ -25,12 +27,204 @@ const AdminReports = () => {
     load();
   }, [period]);
 
+  // Export function to generate PDF file
+  const handleExport = () => {
+    if (!data) return;
+
+    // Generate filename based on period and current date
+    const now = new Date();
+    let filename = '';
+    let title = '';
+    
+    switch (period) {
+      case 'day':
+        filename = `Daily Revenue Reports - ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+        title = `Daily Revenue Reports\n${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+        break;
+      case 'week':
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        filename = `Weekly Revenue Reports - ${weekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} to ${weekEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+        title = `Weekly Revenue Reports\n${weekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} to ${weekEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+        break;
+      case 'month':
+        filename = `${now.toLocaleDateString('en-US', { month: 'long' })} Revenue Reports - ${now.getFullYear()}`;
+        title = `${now.toLocaleDateString('en-US', { month: 'long' })} Revenue Reports\n${now.getFullYear()}`;
+        break;
+      case 'year':
+        filename = `Yearly Revenue Reports - ${now.getFullYear()}`;
+        title = `Yearly Revenue Reports\n${now.getFullYear()}`;
+        break;
+    }
+
+    // Create PDF document
+    const doc = new jsPDF();
+    let yPosition = 20;
+
+    // Set font and add title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    const titleLines = doc.splitTextToSize(title, 180);
+    doc.text(titleLines, 14, yPosition);
+    yPosition += titleLines.length * 10 + 10;
+
+    // Add date generated
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`, 14, yPosition);
+    yPosition += 15;
+
+    // Key Metrics Section
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Key Metrics', 14, yPosition);
+    yPosition += 8;
+
+    // Helper function to format currency for PDF
+    const formatCurrency = (value: number): string => {
+      return 'PHP ' + Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const metricsData = [
+      ['Total Revenue', formatCurrency(data.totalRevenue)],
+      ['Total Orders', data.totalOrders.toString()],
+      ['Average Order Value', formatCurrency(data.avgOrderValue)],
+    ];
+
+    if (data.conversionRate !== null) {
+      metricsData.push(['Conversion Rate', `${data.conversionRate}%`]);
+    }
+    if (data.targetAchievement !== null) {
+      metricsData.push(['Target Achievement', `${data.targetAchievement}%`]);
+    }
+    if (data.avgOrderSize !== null) {
+      metricsData.push(['Average Order Size', formatCurrency(data.avgOrderSize)]);
+    }
+
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Metric', 'Value']],
+      body: metricsData,
+      theme: 'striped',
+      headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 10 },
+      margin: { left: 14, right: 14 },
+    });
+
+    yPosition = (doc as any).lastAutoTable.finalY + 15;
+
+    // Revenue Trend Section
+    if (data.revenueTrend && data.revenueTrend.length > 0) {
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Revenue Trend', 14, yPosition);
+      yPosition += 8;
+
+      const trendData = data.revenueTrend.map(item => [
+        item.period,
+        formatCurrency(item.revenue)
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Period', 'Revenue']],
+        body: trendData,
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10 },
+        margin: { left: 14, right: 14 },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    // Category Distribution Section
+    if (data.category && data.category.length > 0) {
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Category Distribution', 14, yPosition);
+      yPosition += 8;
+
+      const categoryData = data.category.map(item => [
+        item.category,
+        `${item.percentage}%`
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Category', 'Percentage']],
+        body: categoryData,
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10 },
+        margin: { left: 14, right: 14 },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    // Top Products Section
+    if (data.topProducts && data.topProducts.length > 0) {
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Top Products', 14, yPosition);
+      yPosition += 8;
+
+      const productsData = data.topProducts.map(item => [
+        item.name,
+        item.sales.toString(),
+        item.revenue
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Product Name', 'Sales', 'Revenue']],
+        body: productsData,
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10 },
+        margin: { left: 14, right: 14 },
+      });
+    }
+
+    // Save the PDF
+    doc.save(`${filename}.pdf`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-dgreen">Reports & Analytics</h1>
-        <p className="text-dgray mt-1">Track your business performance and insights</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-dgreen">Reports & Analytics</h1>
+          <p className="text-dgray mt-1">Track your business performance and insights</p>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={!data || loading}
+          className="cursor-pointer flex items-center gap-2 bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-dgreen/90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+          title="Export Reports"
+        >
+          <Download className="w-5 h-5" />
+          Export
+        </button>
       </div>
 
       {/* Time Period Selector */}
