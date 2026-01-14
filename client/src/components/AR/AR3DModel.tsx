@@ -58,23 +58,23 @@ const AR3DModel = React.forwardRef<AR3DModelRef, AR3DModelProps>(({
       const scene = new THREE.Scene();
       sceneRef.current = scene;
 
-      // Camera setup - match video aspect ratio
-      const aspect = video.videoWidth > 0 && video.videoHeight > 0
-        ? video.videoWidth / video.videoHeight
-        : container.clientWidth / container.clientHeight;
+      // Camera setup - use container dimensions to match visible area (not raw video)
+      // This is critical because video uses object-cover which crops on mobile
+      const aspect = container.clientWidth / container.clientHeight;
       const camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
       camera.position.set(0, 0, 3);
       camera.lookAt(0, 0, 0); // Ensure camera looks at origin
       cameraRef.current = camera;
 
-      // Renderer setup
+      // Renderer setup - use container dimensions to match visible area
+      // This ensures the 3D model aligns with what the user actually sees
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
         antialias: true,
         canvas: container.querySelector('canvas') || undefined
       });
-      const width = video.videoWidth > 0 ? video.videoWidth : container.clientWidth;
-      const height = video.videoHeight > 0 ? video.videoHeight : container.clientHeight;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
       renderer.setSize(width, height);
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setClearColor(0x000000, 0); // Transparent background
@@ -220,14 +220,21 @@ const AR3DModel = React.forwardRef<AR3DModelRef, AR3DModelProps>(({
           // Ensure camera always looks at origin (center of screen)
           camera.lookAt(0, 0, 0);
 
-          // Update camera aspect ratio if video dimensions changed
-          const currentVideo = videoRef.current;
-          if (currentVideo && currentVideo.videoWidth > 0 && currentVideo.videoHeight > 0) {
-            const newAspect = currentVideo.videoWidth / currentVideo.videoHeight;
-            if (Math.abs(camera.aspect - newAspect) > 0.01) {
+          // Update camera aspect ratio and renderer size based on container dimensions
+          // This ensures alignment with the visible area (video with object-cover)
+          const currentContainer = containerRef.current;
+          if (currentContainer) {
+            const containerWidth = currentContainer.clientWidth;
+            const containerHeight = currentContainer.clientHeight;
+            const newAspect = containerWidth / containerHeight;
+            
+            // Only update if dimensions changed significantly
+            if (Math.abs(camera.aspect - newAspect) > 0.01 || 
+                renderer.domElement.width !== containerWidth || 
+                renderer.domElement.height !== containerHeight) {
               camera.aspect = newAspect;
               camera.updateProjectionMatrix();
-              renderer.setSize(currentVideo.videoWidth, currentVideo.videoHeight);
+              renderer.setSize(containerWidth, containerHeight);
             }
           }
 
