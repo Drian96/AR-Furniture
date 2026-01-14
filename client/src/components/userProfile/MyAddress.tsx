@@ -23,6 +23,11 @@ const MyAddress = () => {
     street_address: '',
     address_type: 'home'
   });
+  const [validationErrors, setValidationErrors] = useState<{
+    phone?: string;
+    postal_code?: string;
+    region?: string;
+  }>({});
 
   // Load addresses on component mount
   useEffect(() => {
@@ -53,6 +58,7 @@ const MyAddress = () => {
       street_address: '',
       address_type: 'home'
     });
+    setValidationErrors({});
     setShowAddForm(true);
   };
 
@@ -69,6 +75,7 @@ const MyAddress = () => {
       street_address: address.street_address || '',
       address_type: address.address_type
     });
+    setValidationErrors({});
     setShowEditForm(true);
   };
 
@@ -97,6 +104,28 @@ const MyAddress = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate all fields before submission
+    const phoneError = validatePhone(formData.phone || '');
+    const postalCodeError = validatePostalCode(formData.postal_code || '');
+    const regionError = validateRegion(formData.region || '');
+    
+    const errors: {
+      phone?: string;
+      postal_code?: string;
+      region?: string;
+    } = {};
+    
+    if (phoneError) errors.phone = phoneError;
+    if (postalCodeError) errors.postal_code = postalCodeError;
+    if (regionError) errors.region = regionError;
+    
+    setValidationErrors(errors);
+    
+    // Check if there are any validation errors
+    if (phoneError || postalCodeError || regionError) {
+      return; // Don't submit if there are errors
+    }
+    
     try {
       if (showEditForm && selectedAddress) {
         await updateAddress(selectedAddress.id, formData);
@@ -110,6 +139,7 @@ const MyAddress = () => {
       setShowAddForm(false);
       setShowEditForm(false);
       setSelectedAddress(null);
+      setValidationErrors({});
       setIsSuccess(true);
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
@@ -158,6 +188,63 @@ const MyAddress = () => {
       street_address: '',
       address_type: 'home'
     });
+    setValidationErrors({});
+  };
+
+  // Validation helper functions
+  const validatePhone = (value: string | undefined): string | undefined => {
+    if (!value) return undefined; // Phone is optional
+    if (!/^\d+$/.test(value)) {
+      return 'Phone number must contain only numbers';
+    }
+    if (value.length > 11) {
+      return 'Phone number must be 11 digits or less';
+    }
+    return undefined;
+  };
+
+  const validatePostalCode = (value: string | undefined): string | undefined => {
+    if (!value) return undefined; // Postal code is optional
+    if (!/^\d+$/.test(value)) {
+      return 'Postal code must contain only numbers';
+    }
+    if (value.length > 4) {
+      return 'Postal code must be 4 digits or less';
+    }
+    return undefined;
+  };
+
+  const validateRegion = (value: string | undefined): string | undefined => {
+    if (!value) return undefined; // Will be caught by required attribute
+    if (!/^\d+$/.test(value)) {
+      return 'Region must contain only numbers';
+    }
+    return undefined;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length <= 11) {
+      setFormData({ ...formData, phone: value });
+      const error = validatePhone(value);
+      setValidationErrors({ ...validationErrors, phone: error });
+    }
+  };
+
+  const handlePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length <= 4) {
+      setFormData({ ...formData, postal_code: value });
+      const error = validatePostalCode(value);
+      setValidationErrors({ ...validationErrors, postal_code: error });
+    }
+  };
+
+  const handleRegionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    setFormData({ ...formData, region: value });
+    const error = validateRegion(value);
+    setValidationErrors({ ...validationErrors, region: error });
   };
 
   const getFullAddress = (address: Address) => {
@@ -262,23 +349,42 @@ const MyAddress = () => {
                   required
                   className="px-4 py-2 border border-lgray rounded-lg focus:outline-none focus:border-dgreen"
                 />
-                <input
-                  type="text"
-                  placeholder="Phone Number"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="px-4 py-2 border border-lgray rounded-lg focus:outline-none focus:border-dgreen"
-                />
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="Phone (11 digits max)"
+                    value={formData.phone}
+                    onChange={handlePhoneChange}
+                    maxLength={11}
+                    className={`px-4 py-2 border rounded-lg focus:outline-none ${
+                      validationErrors.phone 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : 'border-lgray focus:border-dgreen'
+                    }`}
+                  />
+                  {validationErrors.phone && (
+                    <span className="text-red-500 text-xs mt-1">{validationErrors.phone}</span>
+                  )}
+                </div>
               </div>
               
-              <input
-                type="text"
-                placeholder="Region *"
-                value={formData.region}
-                onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                required
-                className="w-full px-4 py-2 border border-lgray rounded-lg focus:outline-none focus:border-dgreen"
-              />
+              <div className="flex flex-col">
+                <input
+                  type="text"
+                  placeholder="Region * (Numbers only)"
+                  value={formData.region}
+                  onChange={handleRegionChange}
+                  required
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${
+                    validationErrors.region 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-lgray focus:border-dgreen'
+                  }`}
+                />
+                {validationErrors.region && (
+                  <span className="text-red-500 text-xs mt-1">{validationErrors.region}</span>
+                )}
+              </div>
               
               <input
                 type="text"
@@ -306,13 +412,23 @@ const MyAddress = () => {
                 className="w-full px-4 py-2 border border-lgray rounded-lg focus:outline-none focus:border-dgreen"
               />
               
-              <input
-                type="text"
-                placeholder="Postal Code"
-                value={formData.postal_code}
-                onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                className="w-full px-4 py-2 border border-lgray rounded-lg focus:outline-none focus:border-dgreen"
-              />
+              <div className="flex flex-col">
+                <input
+                  type="text"
+                  placeholder="Postal Code (4 digits max)"
+                  value={formData.postal_code}
+                  onChange={handlePostalCodeChange}
+                  maxLength={4}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${
+                    validationErrors.postal_code 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-lgray focus:border-dgreen'
+                  }`}
+                />
+                {validationErrors.postal_code && (
+                  <span className="text-red-500 text-xs mt-1">{validationErrors.postal_code}</span>
+                )}
+              </div>
               
               <textarea
                 placeholder="Street Name, Building, House No. *"

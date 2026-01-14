@@ -62,9 +62,75 @@ const Checkout = () => {
     }
   }, [cartItems, navigate]);
 
+  // Validation helper functions
+  const validatePhone = (value: string | undefined): string | undefined => {
+    if (!value) return 'Phone number is required';
+    if (!/^\d+$/.test(value)) {
+      return 'Phone number must contain only numbers';
+    }
+    if (value.length > 11) {
+      return 'Phone number must be 11 digits or less';
+    }
+    return undefined;
+  };
+
+  const validatePostalCode = (value: string | undefined): string | undefined => {
+    if (!value) return 'Postal code is required';
+    if (!/^\d+$/.test(value)) {
+      return 'Postal code must contain only numbers';
+    }
+    if (value.length > 4) {
+      return 'Postal code must be 4 digits or less';
+    }
+    return undefined;
+  };
+
+  // Handle phone number change with validation
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length <= 11) {
+      setFormData(prev => ({
+        ...prev,
+        phone: value
+      }));
+      const error = validatePhone(value);
+      setErrors(prev => ({
+        ...prev,
+        phone: error || ''
+      }));
+    }
+  };
+
+  // Handle postal code change with validation
+  const handlePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length <= 4) {
+      setFormData(prev => ({
+        ...prev,
+        postalCode: value
+      }));
+      const error = validatePostalCode(value);
+      setErrors(prev => ({
+        ...prev,
+        postalCode: error || ''
+      }));
+    }
+  };
+
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Skip special handlers for phone and postalCode
+    if (name === 'phone') {
+      handlePhoneChange(e as React.ChangeEvent<HTMLInputElement>);
+      return;
+    }
+    if (name === 'postalCode') {
+      handlePostalCodeChange(e as React.ChangeEvent<HTMLInputElement>);
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -97,10 +163,8 @@ const Checkout = () => {
     if (!formData.firstName?.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName?.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.email?.trim()) newErrors.email = 'Email is required';
-    if (!formData.phone?.trim()) newErrors.phone = 'Phone number is required';
     if (!formData.address?.trim()) newErrors.address = 'Address is required';
     if (!formData.city?.trim()) newErrors.city = 'City is required';
-    if (!formData.postalCode?.trim()) newErrors.postalCode = 'Postal code is required';
     
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -108,10 +172,16 @@ const Checkout = () => {
       newErrors.email = 'Please enter a valid email address';
     }
     
-    // Phone validation (basic)
-    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
-    if (formData.phone && !phoneRegex.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
+    // Phone validation (numbers only, max 11)
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      newErrors.phone = phoneError;
+    }
+    
+    // Postal code validation (numbers only, max 4)
+    const postalCodeError = validatePostalCode(formData.postalCode);
+    if (postalCodeError) {
+      newErrors.postalCode = postalCodeError;
     }
     
     setErrors(newErrors);
@@ -420,13 +490,14 @@ const Checkout = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number *
+                  Phone Number * (11 digits max)
                 </label>
                 <input
                   type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
+                  maxLength={11}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-dgreen focus:border-dgreen ${
                     errors.phone ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -479,13 +550,14 @@ const Checkout = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Postal Code *
+                    Postal Code * (4 digits max)
                   </label>
                   <input
                     type="text"
                     name="postalCode"
                     value={formData.postalCode}
                     onChange={handleInputChange}
+                    maxLength={4}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-dgreen focus:border-dgreen ${
                       errors.postalCode ? 'border-red-500' : 'border-gray-300'
                     }`}
