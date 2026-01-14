@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 // Expose renderer ref for capture functionality
 export type AR3DModelRef = {
   getRenderer: () => THREE.WebGLRenderer | null;
+  render: () => void; // Force a render frame for capture
 };
 
 interface AR3DModelProps {
@@ -44,6 +45,21 @@ const AR3DModel = React.forwardRef<AR3DModelRef, AR3DModelProps>(({
   // Expose renderer ref to parent
   React.useImperativeHandle(ref, () => ({
     getRenderer: () => rendererRef.current,
+    render: () => {
+      // Force a render frame for capture
+      if (modelRef.current && cameraRef.current && rendererRef.current && sceneRef.current) {
+        // Apply current rotation and scale
+        modelRef.current.rotation.y = modelRotationRef.current.y;
+        modelRef.current.rotation.x = modelRotationRef.current.x;
+        modelRef.current.scale.setScalar(baseModelScaleRef.current * scale);
+        
+        // Ensure camera looks at origin
+        cameraRef.current.lookAt(0, 0, 0);
+        
+        // Render the scene
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
+    },
   }));
 
   useEffect(() => {

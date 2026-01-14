@@ -16,6 +16,7 @@ interface ARViewerProps {
  */
 const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,25 +149,68 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
           throw new Error('3D renderer not available');
         }
 
-        const canvas = renderer.domElement;
+        // Force a render to ensure the canvas has the latest frame
+        ar3DModelRef.current.render();
 
-        // Create a temporary canvas
+        const canvas = renderer.domElement;
+        const video = videoRef.current;
+        const container = containerRef.current;
+
+        if (!video || video.videoWidth === 0) {
+          throw new Error('Video not ready for capture');
+        }
+
+        if (!container) {
+          throw new Error('Container not available');
+        }
+
+        // Get container dimensions (what the user actually sees)
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        // Calculate how the video is cropped with object-cover
+        // object-cover maintains aspect ratio and crops to fill
+        const videoAspect = video.videoWidth / video.videoHeight;
+        const containerAspect = containerWidth / containerHeight;
+
+        let sourceX = 0;
+        let sourceY = 0;
+        let sourceWidth = video.videoWidth;
+        let sourceHeight = video.videoHeight;
+
+        // If container is wider than video aspect, crop video width
+        if (containerAspect > videoAspect) {
+          sourceHeight = video.videoHeight;
+          sourceWidth = video.videoHeight * containerAspect;
+          sourceX = (video.videoWidth - sourceWidth) / 2;
+        } else {
+          // Container is taller, crop video height
+          sourceWidth = video.videoWidth;
+          sourceHeight = video.videoWidth / containerAspect;
+          sourceY = (video.videoHeight - sourceHeight) / 2;
+        }
+
+        // Create a temporary canvas with container dimensions (what user sees)
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
+        tempCanvas.width = containerWidth;
+        tempCanvas.height = containerHeight;
         const tempCtx = tempCanvas.getContext('2d');
 
         if (!tempCtx) {
           throw new Error('Could not get canvas context');
         }
 
-        // Draw video background
-        if (videoRef.current && videoRef.current.videoWidth > 0) {
-          tempCtx.drawImage(videoRef.current, 0, 0, tempCanvas.width, tempCanvas.height);
-        }
+        // Draw the visible portion of the video (matching object-cover behavior)
+        tempCtx.drawImage(
+          video,
+          sourceX, sourceY, sourceWidth, sourceHeight, // Source: cropped video area
+          0, 0, containerWidth, containerHeight // Destination: full container
+        );
 
-        // Draw 3D render on top
-        tempCtx.drawImage(canvas, 0, 0);
+        // Draw 3D render on top - renderer canvas is already container-sized
+        // so we can draw it directly
+        tempCtx.drawImage(canvas, 0, 0, containerWidth, containerHeight);
+        
         canvasToCapture = tempCanvas;
       } else if (ar2DImageRef.current) {
         // For 2D images, use existing canvas
@@ -250,7 +294,7 @@ const ARViewer: React.FC<ARViewerProps> = ({ productImage, productName, onClose 
       </div>
 
       {/* Camera View */}
-      <div className="flex-1 relative min-h-0 w-full">
+      <div ref={containerRef} className="flex-1 relative min-h-0 w-full">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
             <div className="text-center text-white">
