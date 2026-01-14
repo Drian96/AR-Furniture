@@ -234,6 +234,64 @@ export const orderService = {
       console.error('Error fetching order with details:', error);
       throw error;
     }
+  },
+
+  // Delete a single order (order_items will be deleted automatically due to CASCADE)
+  async deleteOrder(orderId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) {
+        throw new Error(`Failed to delete order: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw error;
+    }
+  },
+
+  // Delete completed orders (delivered or cancelled) older than retention days
+  async deleteCompletedOrders(retentionDays: number = 30): Promise<number> {
+    try {
+      const retentionDate = new Date();
+      retentionDate.setDate(retentionDate.getDate() - retentionDays);
+      const retentionDateString = retentionDate.toISOString();
+
+      // Get orders to delete
+      const { data: ordersToDelete, error: fetchError } = await supabase
+        .from('orders')
+        .select('id')
+        .in('status', ['delivered', 'cancelled'])
+        .lt('updated_at', retentionDateString);
+
+      if (fetchError) {
+        throw new Error(`Failed to fetch orders to delete: ${fetchError.message}`);
+      }
+
+      if (!ordersToDelete || ordersToDelete.length === 0) {
+        return 0;
+      }
+
+      const orderIds = ordersToDelete.map(order => order.id);
+
+      // Delete orders (order_items will be deleted automatically due to CASCADE)
+      const { error: deleteError } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', orderIds);
+
+      if (deleteError) {
+        throw new Error(`Failed to delete orders: ${deleteError.message}`);
+      }
+
+      return orderIds.length;
+    } catch (error) {
+      console.error('Error deleting completed orders:', error);
+      throw error;
+    }
   }
 };
 

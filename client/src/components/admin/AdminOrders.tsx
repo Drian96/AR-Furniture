@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, X, Eye, CheckCircle, XCircle, Truck, Package } from 'lucide-react';
+import { Search, X, Eye, CheckCircle, XCircle, Truck, Package, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { orderService, Order } from '../../services/supabase';
 
 // Orders management component for admin
@@ -17,6 +17,13 @@ const AdminOrders = () => {
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+  const [deletingOrder, setDeletingOrder] = useState<number | null>(null);
+  const [cleaningUp, setCleaningUp] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<{ id: number; orderNumber: string } | null>(null);
+  const [showCleanupModal, setShowCleanupModal] = useState(false);
+  const [selectedRetentionDays, setSelectedRetentionDays] = useState(30);
+  const [showNotification, setShowNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Load orders on component mount
   useEffect(() => {
@@ -63,9 +70,10 @@ const AdminOrders = () => {
       setUpdatingStatus(orderId);
       await orderService.updateOrderStatus(orderId, newStatus);
       await loadOrders(); // Refresh orders
+      setShowNotification({ type: 'success', message: 'Order status updated successfully.' });
     } catch (error) {
       console.error('Failed to update order status:', error);
-      alert('Failed to update order status. Please try again.');
+      setShowNotification({ type: 'error', message: 'Failed to update order status. Please try again.' });
     } finally {
       setUpdatingStatus(null);
     }
@@ -150,12 +158,71 @@ const AdminOrders = () => {
       await loadOrders();
       await loadReturnRequests();
       
-      alert(`Return request ${action}d successfully.`);
+      setShowNotification({ type: 'success', message: `Return request ${action}d successfully.` });
     } catch (error) {
       console.error(`Failed to ${action} return request:`, error);
-      alert(`Failed to ${action} return request. Please try again.`);
+      setShowNotification({ type: 'error', message: `Failed to ${action} return request. Please try again.` });
     }
   };
+
+  // Handle manual order deletion - open modal
+  const handleDeleteOrderClick = (orderId: number, orderNumber: string) => {
+    setOrderToDelete({ id: orderId, orderNumber });
+    setShowDeleteModal(true);
+  };
+
+  // Confirm and execute order deletion
+  const confirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+
+    try {
+      setDeletingOrder(orderToDelete.id);
+      await orderService.deleteOrder(orderToDelete.id);
+      await loadOrders(); // Refresh orders
+      setShowDeleteModal(false);
+      setOrderToDelete(null);
+      setShowNotification({ type: 'success', message: `Order ${orderToDelete.orderNumber} deleted successfully.` });
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+      setShowNotification({ type: 'error', message: 'Failed to delete order. Please try again.' });
+    } finally {
+      setDeletingOrder(null);
+    }
+  };
+
+  // Handle automatic cleanup of completed orders - open modal
+  const handleCleanupClick = () => {
+    setShowCleanupModal(true);
+  };
+
+  // Confirm and execute cleanup
+  const confirmCleanup = async () => {
+    try {
+      setCleaningUp(true);
+      const deletedCount = await orderService.deleteCompletedOrders(selectedRetentionDays);
+      await loadOrders(); // Refresh orders
+      setShowCleanupModal(false);
+      setShowNotification({ 
+        type: 'success', 
+        message: `Successfully deleted ${deletedCount} completed order(s) older than ${selectedRetentionDays} days.` 
+      });
+    } catch (error) {
+      console.error('Failed to cleanup completed orders:', error);
+      setShowNotification({ type: 'error', message: 'Failed to cleanup completed orders. Please try again.' });
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (showNotification) {
+      const timer = setTimeout(() => {
+        setShowNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showNotification]);
 
   return (
     <div className="space-y-6">
@@ -165,15 +232,24 @@ const AdminOrders = () => {
           <h1 className="text-3xl font-bold text-dgreen">Orders</h1>
           <p className="text-dgray mt-1">Manage customer orders and returns</p>
         </div>
-        <button 
-          onClick={async () => {
-            setShowReturnManagement(true);
-            await loadReturnRequests();
-          }}
-          className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors cursor-pointer"
-        >
-          Return Management
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleCleanupClick}
+            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors cursor-pointer flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Cleanup Old Orders
+          </button>
+          <button 
+            onClick={async () => {
+              setShowReturnManagement(true);
+              await loadReturnRequests();
+            }}
+            className="bg-dgreen text-cream px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors cursor-pointer"
+          >
+            Return Management
+          </button>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
@@ -309,6 +385,22 @@ const AdminOrders = () => {
                             title="Cancel Order"
                           >
                             <XCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        
+                        {/* Delete button for delivered and cancelled orders */}
+                        {(order.status === 'delivered' || order.status === 'cancelled') && (
+                          <button
+                            onClick={() => handleDeleteOrderClick(order.id, order.order_number)}
+                            disabled={deletingOrder === order.id}
+                            className="text-red-600 hover:text-red-800 cursor-pointer hover:scale-110 disabled:opacity-50"
+                            title="Delete Order"
+                          >
+                            {deletingOrder === order.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </button>
                         )}
                       </div>
@@ -561,6 +653,185 @@ const AdminOrders = () => {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && orderToDelete && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-dgreen">Delete Order</h2>
+                <p className="text-sm text-dgray">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-dgray">
+                Are you sure you want to delete order <span className="font-semibold text-dgreen">{orderToDelete.orderNumber}</span>?
+              </p>
+              <p className="text-sm text-red-600 mt-2">
+                All associated order items and data will be permanently deleted.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setOrderToDelete(null);
+                }}
+                disabled={deletingOrder === orderToDelete.id}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:border-dgreen transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteOrder}
+                disabled={deletingOrder === orderToDelete.id}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                {deletingOrder === orderToDelete.id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Order'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cleanup Modal */}
+      {showCleanupModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-dgreen">Cleanup Old Orders</h2>
+                  <p className="text-sm text-dgray">Delete completed orders</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowCleanupModal(false)}
+                className="text-dgray hover:text-dgreen"
+                disabled={cleaningUp}
+              >
+                <X className="w-6 h-6 cursor-pointer" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-dgray mb-4">
+                Select the retention period. Orders with status <span className="font-semibold">delivered</span> or <span className="font-semibold">cancelled</span> older than the selected period will be deleted.
+              </p>
+              
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-dgreen mb-2">Retention Period</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { days: 30, label: '30 Days' },
+                    { days: 90, label: '90 Days' },
+                    { days: 180, label: '6 Months' },
+                    { days: 365, label: '1 Year' }
+                  ].map((option) => (
+                    <button
+                      key={option.days}
+                      onClick={() => setSelectedRetentionDays(option.days)}
+                      className={`px-4 py-3 rounded-lg border-2 transition-all cursor-pointer ${
+                        selectedRetentionDays === option.days
+                          ? 'border-orange-600 bg-orange-50 text-orange-700 font-semibold'
+                          : 'border-gray-200 hover:border-orange-300 text-dgray'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-dgreen mb-2">Custom Days</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={selectedRetentionDays}
+                    onChange={(e) => setSelectedRetentionDays(Math.max(1, parseInt(e.target.value) || 30))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Enter days"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm text-orange-800">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  This will permanently delete all delivered and cancelled orders older than <span className="font-semibold">{selectedRetentionDays} days</span>. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowCleanupModal(false)}
+                disabled={cleaningUp}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:border-dgreen transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCleanup}
+                disabled={cleaningUp}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                {cleaningUp ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Cleaning up...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Cleanup Orders
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Toast */}
+      {showNotification && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-5">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+            showNotification.type === 'success' 
+              ? 'bg-green-50 border border-green-200 text-green-800' 
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}>
+            {showNotification.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+            )}
+            <p className="font-medium">{showNotification.message}</p>
+            <button
+              onClick={() => setShowNotification(null)}
+              className="ml-2 text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
