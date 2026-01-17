@@ -354,6 +354,7 @@ const AdminAuditLogs = () => {
                 <p className="text-sm text-dgray bg-cream rounded-lg p-3">{selectedLog.description}</p>
               </div>
 
+              {/* Log Detail Modal 
               <div>
                 <h3 className="font-semibold text-dgreen mb-2">Additional Details</h3>
                 <div className="bg-cream rounded-lg p-3">
@@ -362,6 +363,8 @@ const AdminAuditLogs = () => {
                   </pre>
                 </div>
               </div>
+              */}
+              
             </div>
           </div>
         </div>
