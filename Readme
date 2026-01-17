@@ -1,0 +1,94 @@
+AR-Furniture
+============
+
+Compact README for the AR-Furniture project (client + server).
+
+Overview
+--------
+AR-Furniture is a two-part web application: a React + Vite client and a Node/Express server. The client provides an AR-enabled furniture shopping UI and admin pages; the server exposes REST APIs, authentication, and audit/notification features.
+
+Repository layout
+-----------------
+- client/ — front-end app (Vite + React + TypeScript)
+  - src/ — application source
+  - public/ — static assets
+  - package.json — client scripts and deps
+- server/ — back-end (Node/Express)
+  - src/ — app, controllers, routes, middleware
+  - migrations/, seed/ — DB setup and seed data
+  - package.json — server scripts and deps
+
+
+Quick prerequisites
+-------------------
+- Node.js LTS (16+ recommended)
+- npm or yarn
+- PostgreSQL (if using local DB) or configured Supabase project
+
+Environment
+-----------
+Create `.env` files in the `server/` (and `client/` if required) with values similar to:
+
+- SERVER_PORT=3000
+- DATABASE_URL=postgres://user:pass@localhost:5432/dbname
+- JWT_SECRET=replace_with_secure_secret
+- SUPABASE_URL=...
+- SUPABASE_KEY=...
+
+Client setup (development)
+--------------------------
+From the `client/` folder:
+
+```bash
+npm install
+npm run dev
+```
+
+The client uses Vite; open the printed local URL (usually http://localhost:5173).
+
+Server setup (development)
+--------------------------
+From the `server/` folder:
+
+```bash
+npm install
+npm run dev
+```
+
+Typical server scripts (check `server/package.json`):
+- `dev` — run server in development (nodemon)
+- `start` — start production server
+- `migrate` / `seed` — run migrations and seed scripts (if present)
+
+Database & migrations
+---------------------
+The `server/migrations/` folder includes SQL migration files. Run your chosen migration tool or scripts in `server/` to create tables and seeds before starting the server.
+
+Testing
+-------
+- Check `client/package.json` and `server/package.json` for available `test` scripts.
+
+Deployment notes
+----------------
+- Client can be built with `npm run build` in `client/` and deployed to static hosts (Vercel, Netlify).
+- Server can be deployed to any Node-friendly host (Heroku, Azure App Service, DigitalOcean App Platform) with the required environment variables.
+- For realtime notifications and auth, confirm Supabase or equivalent services are configured.
+
+Contributing
+------------
+- Fork the repo and open a PR for changes.
+- Keep changes small and focused.
+- Add notes to this README if you add new scripts or services.
+
+Where to look next
+------------------
+- Frontend entry: `client/src/main.tsx`
+- Backend entry: `server/src/app.js`
+- API routes: `server/src/routes/`
+- Auth & notifications utilities: `server/src/utils/`
+
+Contact
+-------
+For questions about this repository, contact the maintainer or the person who provided the workspace.
+
+
